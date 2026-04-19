@@ -4,7 +4,7 @@ This library implements algorithms for the VM Packing problem as part of my St A
 Even though the dissertation has been submitted as of 4 April 2025, this repository is under development.
 I hope to continue providing implementations of more algorithms as they come up.
 
-Approximations currently implemented:
+Approximations currently ![implemented](src/vmp_solvers.h):
 
 * Next Fit
 * First Fit
@@ -53,11 +53,3 @@ Build the project:
 ```shell
 cmake --build .
 ```
-
-## Important TODOs
-
-* `GuestSelection(size_t, const std::vector<std::shared_ptr<const Guest>> &)` copies the guest vector. As this is an
-  intermediate step in the Cluster Tree maximisation algorithm, it likely degrades performance substantially. Refactor
-  the code to store only the selection mask for each cluster, and backtrack to reconstruct the guest vector.
-
-* Add simple hand-traced cases as unit tests.

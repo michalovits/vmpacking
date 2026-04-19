@@ -294,9 +294,6 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
 /**
  * Solves VM-PACK by the Sinderal, et al. (2011) greedy algorithm on the tree model.
  *
- * O((G^2 * P) + N^2), where G is the number of guests, P the maximum number of pages on one guest
- * and N the number of nodes
- *
  * @param instance the instance to solve
  * @param intermediateSolver the intermediate solver with which to pack each extracted subtree
  * @return a valid packing
@@ -422,8 +419,6 @@ Packing solveByLocalClusterTree(const ClusterTreeInstance &instance,
  * Solves an instance of VM-PACK by searching for the minimum number of bins
  * that yield a complete packing using the given maximisation algorithm.
  *
- * O(log(G) * T_maximiser)
- *
  * @param instance the instance to solve
  * @param maximiser the n-host maximiser
  * @param allowUnlimitedHosts whether the maximiser will produce a minimal packing when
@@ -448,6 +443,7 @@ Packing solveByMaximiser(
         }
     }
     else {
+        // Binary search for the least number of hosts that produces a complete packing
         size_t minHosts = 1;
         size_t maxHosts = instance.getGuests().size();
 
