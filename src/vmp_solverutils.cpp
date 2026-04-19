@@ -4,8 +4,8 @@
 #include <vmp_host.h>
 
 #include <cmath>
-#include <numeric>
 #include <queue>
+#include <stdexcept>
 #include <unordered_map>
 
 namespace vmp
@@ -41,6 +41,10 @@ double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared
                 std::min(minDifferenceWithOtherHost, otherHost->countPagesNotOn(guest));
         }
     }
+    // Not found
+    if (minDifferenceWithOtherHost == std::numeric_limits<size_t>::max()) {
+        minDifferenceWithOtherHost = 0;
+    }
 
     return static_cast<double>(pagesOnHost + minDifferenceWithOtherHost) /
            std::sqrt(guest.getUniquePageCount());
@@ -73,6 +77,11 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
 
         const size_t weight = instance.getNodePages(node).size();
 
+        if (weight > capacities[node]) {
+            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeInstance -- "
+                                        "node page count exceeds capacity after ancestors");
+        }
+
         const auto &children = instance.getNodeChildren(node);
         for (const size_t child : children) {
             capacities[child] = capacities[node] - weight;
@@ -103,6 +112,11 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
         size_t childrenTotalSize = 0;
         for (const size_t child : instance.getNodeChildren(node)) {
             childrenTotalSize += res.at(child).size;
+        }
+
+        if (weight >= capacities[node]) {
+            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeInstance -- "
+                                        "internal node leaves no capacity for its subtree");
         }
 
         const size_t count = std::ceil(static_cast<double>(childrenTotalSize) /

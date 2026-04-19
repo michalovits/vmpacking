@@ -2,7 +2,6 @@
 #define VMP_SOLVERS_H
 
 #include <cassert>
-#include <iostream>
 #include <vmp_packing.h>
 #include <vmp_solverutils.h>
 
@@ -41,6 +40,10 @@ static void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guest
 template <typename InstanceType>
 Packing solveByNextFit(const InstanceType &instance)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::vector<std::shared_ptr<Host>> hosts;
 
     auto guests = instance.getGuests();
@@ -87,6 +90,10 @@ static void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt gues
 template <typename InstanceType>
 Packing solveByFirstFit(const InstanceType &instance)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::vector<std::shared_ptr<Host>> hosts;
 
     const auto &guests = instance.getGuests();
@@ -144,6 +151,10 @@ static void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt gu
 template <typename InstanceType>
 Packing solveByEfficiency(const InstanceType &instance)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::vector<std::shared_ptr<Host>> hosts;
 
     const auto &guests = instance.getGuests();
@@ -232,6 +243,10 @@ static void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, Gue
 template <typename InstanceType>
 Packing solveByOverloadAndRemove(const InstanceType &instance)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::vector<std::shared_ptr<Host>> hosts;
 
     const auto &guests = instance.getGuests();
@@ -249,6 +264,10 @@ Packing solveByOverloadAndRemove(const InstanceType &instance)
 template <typename InstanceType>
 Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::vector<std::shared_ptr<Host>> hosts;
     const auto &guests = instance.getGuests();
     std::unordered_set unplaced(guests.begin(), guests.end());
@@ -258,7 +277,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
         std::shared_ptr<const Guest> bestGuest;
         std::shared_ptr<Host> bestHost;
 
-        double bestScore = std::numeric_limits<double>::min();
+        double bestScore = std::numeric_limits<double>::lowest();
 
         for (const auto &guest : unplaced) {
             if (!largestGuest || guest->getUniquePageCount() > largestGuest->getUniquePageCount()) {
@@ -303,6 +322,10 @@ Packing solveByTree(const TreeInstance &instance,
                     void (*intermediateSolver)(size_t, GuestIt, GuestIt,
                                                std::vector<std::shared_ptr<Host>> &))
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     TreeInstance workingInstance = instance;
 
     std::vector<std::shared_ptr<Host>> hosts;
@@ -318,6 +341,7 @@ Packing solveByTree(const TreeInstance &instance,
 
             Host host(workingInstance.getCapacity());
             host.addGuests(guests.begin(), guests.end());
+            assert(!host.isOverfull());
 
             hosts.push_back(std::make_shared<Host>(std::move(host)));
             break;
@@ -375,6 +399,10 @@ template <typename InstanceType>
 Packing solveByLocalSubsetEfficiency(const InstanceType &instance, const int initialSubsetSize,
                                      const bool decantMaximiserOutputs = true)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     auto oneHostMaximiser =
         [&](const InstanceType &inst,
             const std::unordered_map<std::shared_ptr<const Guest>, int> &profits) {
@@ -401,6 +429,10 @@ template <typename ClusterTreeInstance>
 Packing solveByLocalClusterTree(const ClusterTreeInstance &instance,
                                 const bool decantMaximiserOutputs = true)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     auto oneHostMaximiser =
         [&](const ClusterTreeInstance &inst,
             const std::unordered_map<std::shared_ptr<const Guest>, int> &profits) {
@@ -433,6 +465,10 @@ Packing solveByMaximiser(
     const std::function<Packing(const InstanceType &instance, size_t maxHosts)> &maximiser,
     const bool allowUnlimitedHosts = false, const bool decantMaximiserOutputs = true)
 {
+    if (instance.getGuests().empty()) {
+        return Packing({});
+    }
+
     std::optional<Packing> bestPacking;
 
     if (allowUnlimitedHosts) {

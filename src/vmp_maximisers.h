@@ -2,10 +2,9 @@
 #define VMP_MAXIMISERS_H
 
 #include <vmp_clustertreeinstance.h>
-#include <vmp_packing.h>
 #include <vmp_commontypes.h>
+#include <vmp_packing.h>
 
-#include <iostream>
 #include <numeric>
 #include <ranges>
 
@@ -141,6 +140,12 @@ Packing maximiseByLocalSearch(
     size_t placed = 0;
     while (placed < instance.getGuests().size() && hosts.size() < allowedHostCount) {
         Host newHost = oneHostMaximiser(instance, profits);
+
+        // Profits are monotonically non-increasing; once the maximiser returns
+        // an empty host, no further iteration can make progress
+        if (newHost.getGuests().empty()) {
+            break;
+        }
 
         for (const auto &guest : newHost.getGuests()) {
             profits[guest] = 0;

@@ -53,9 +53,12 @@ struct ProfitOption
     [[nodiscard]] size_t hash() const
     {
         size_t h = std::hash<size_t>{}(cluster);
-        h ^= std::hash<size_t>{}(selectionMask);
-        h ^= std::hash<size_t>{}(childCount);
-        h ^= std::hash<size_t>{}(profitTarget);
+        auto mix = [&h](const size_t v) {
+            h ^= std::hash<size_t>{}(v) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        };
+        mix(selectionMask);
+        mix(childCount);
+        mix(profitTarget);
         return h;
     }
 };

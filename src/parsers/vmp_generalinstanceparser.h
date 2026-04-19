@@ -13,8 +13,7 @@ namespace vmp
 class GeneralInstanceParser
 {
   public:
-    explicit GeneralInstanceParser(std::string directory,
-                                   std::string capacityName = "capacity",
+    explicit GeneralInstanceParser(std::string directory, std::string capacityName = "capacity",
                                    std::string guestsName = "guests");
 
     [[nodiscard]] std::vector<GeneralInstance> load(int maxInstances = -1);

@@ -37,30 +37,26 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
     ClusterTreeInstance &instance, const size_t parentCluster, const json &clusterJson,
     std::unordered_map<size_t, size_t> &fromJsonNode, const bool skipRoot) const
 {
-    if (skipRoot) {
-        for (const auto &clusterChildJson : clusterJson[clusterChildrenName]) {
-            parseClusterSubtree(instance, parentCluster, clusterChildJson, fromJsonNode, false);
+    const size_t cluster =
+        skipRoot ? ClusterTreeInstance::getRootCluster() : instance.createCluster(parentCluster);
+
+    if (clusterJson.contains(nodesName)) {
+        for (const auto &nodeJson : clusterJson[nodesName]) {
+            const std::unordered_set<int> pages =
+                nodeJson[pagesName].get<std::unordered_set<int>>();
+            const size_t jsonNodeId = nodeJson[nodeIdName].get<size_t>();
+
+            std::vector<size_t> parents;
+            for (const size_t jsonNodeParent : nodeJson[nodeParentsName].get<std::vector<int>>()) {
+                parents.push_back(fromJsonNode.at(jsonNodeParent));
+            }
+
+            const size_t node = nodeJson.contains(guestPagesName)
+                                    ? instance.addLeaf(parents, parseGuest(nodeJson), pages)
+                                    : instance.addInner(cluster, parents, pages);
+
+            fromJsonNode[jsonNodeId] = node;
         }
-        return;
-    }
-
-    const size_t cluster = instance.createCluster(parentCluster);
-
-    for (const auto &nodeJson : clusterJson[nodesName]) {
-        const std::unordered_set<int> pages = nodeJson[pagesName].get<std::unordered_set<int>>();
-
-        size_t jsonNodeId = nodeJson[nodeIdName].get<size_t>();
-
-        std::vector<size_t> parents;
-        for (const size_t jsonNodeParent : nodeJson[nodeParentsName].get<std::vector<int>>()) {
-            parents.push_back(fromJsonNode[jsonNodeParent]);
-        }
-
-        const size_t node = nodeJson.contains(guestPagesName)
-                                ? instance.addLeaf(parents, parseGuest(nodeJson), pages)
-                                : instance.addInner(cluster, parents, pages);
-
-        fromJsonNode[jsonNodeId] = node;
     }
 
     for (const auto &clusterChildJson : clusterJson[clusterChildrenName]) {
