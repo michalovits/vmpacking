@@ -22,7 +22,7 @@ Static treatments:
 * Tree-/Cluster Tree-Ordering pre-treatment
 * Decanting post-treatment
 
-## Build Instructions
+## Building
 
 Before building, please make sure your toolchain supports the following:
 

@@ -8,7 +8,7 @@ namespace vmp
 ClusterTreeInstance::ClusterTreeInstance(const size_t capacity) : capacity(capacity)
 {
     clusters = std::vector<Cluster>(ROOT_CLUSTER + 1);
-    clusters[ROOT_CLUSTER] = Cluster(ROOT_CLUSTER, { 0 });
+    clusters[ROOT_CLUSTER] = Cluster(ROOT_CLUSTER, {});
 }
 
 bool ClusterTreeInstance::checkNodesAreInCluster(const std::vector<size_t> &nodes,
@@ -18,8 +18,8 @@ bool ClusterTreeInstance::checkNodesAreInCluster(const std::vector<size_t> &node
         nodes, [&](const size_t node) { return this->nodes[node].cluster == cluster; });
 }
 
-size_t ClusterTreeInstance::addInner(const size_t cluster, const std::vector<size_t> &parents,
-                                     const std::unordered_set<int> &pages)
+size_t ClusterTreeInstance::addInner(const size_t cluster, std::vector<size_t> parents,
+                                     std::unordered_set<int> pages)
 {
     assert(checkNodesAreInCluster(parents, clusters[cluster].parent));
     for (const size_t node : parents) {
@@ -27,18 +27,19 @@ size_t ClusterTreeInstance::addInner(const size_t cluster, const std::vector<siz
     }
 
     const size_t newNode = nodes.size();
-    nodes.emplace_back(parents, pages, nullptr, cluster);
-    clusters[cluster].nodes.push_back(newNode);
-
     for (const size_t parent : parents) {
         nodes[parent].children.push_back(newNode);
     }
+
+    nodes.emplace_back(std::move(parents), std::move(pages), nullptr, cluster);
+    clusters[cluster].nodes.push_back(newNode);
+
     return newNode;
 }
 
-size_t ClusterTreeInstance::addLeaf(const std::vector<size_t> &parents,
+size_t ClusterTreeInstance::addLeaf(std::vector<size_t> parents,
                                     const std::shared_ptr<const Guest> &guest,
-                                    const std::unordered_set<int> &pages)
+                                    std::unordered_set<int> pages)
 {
     assert(!parents.empty());
 
@@ -48,10 +49,6 @@ size_t ClusterTreeInstance::addLeaf(const std::vector<size_t> &parents,
     const size_t newNode = nodes.size();
     const size_t newCluster = createCluster(parentCluster);
 
-    nodes.emplace_back(parents, pages, guest, newCluster);
-    clusters[newCluster].nodes.push_back(newNode);
-    this->leaves.push_back(newNode);
-
     for (const size_t parent : parents) {
         nodes[parent].children.push_back(newNode);
 
@@ -60,6 +57,10 @@ size_t ClusterTreeInstance::addLeaf(const std::vector<size_t> &parents,
             clusters[nodes[parent].cluster].children.push_back(newCluster);
         }
     }
+
+    nodes.emplace_back(std::move(parents), std::move(pages), guest, newCluster);
+    clusters[newCluster].nodes.push_back(newNode);
+    this->leaves.push_back(newNode);
 
     return newNode;
 }

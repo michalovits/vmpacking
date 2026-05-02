@@ -95,19 +95,19 @@ bool Host::hasGuest(const std::shared_ptr<const Guest> &guest) const
 std::ostream &operator<<(std::ostream &os, const Host &host)
 {
     os << "Host{ capacity=" << host.capacity << ", [";
-    if (!host.guests.empty()) {
-        for (auto it = host.guests.begin(); it != host.guests.end(); ++it) {
-            if (it != host.guests.begin()) {
-                os << ", ";
-            }
-            if (*it == nullptr) {
-                os << "NULL";
-            }
-            else {
-                os << **it;
-            }
+
+    const auto &guests = host.guests;
+    for (auto it = guests.begin(); it != guests.end(); ++it) {
+        if (it != guests.begin()) {
+            os << ", ";
         }
+        if (*it == nullptr) {
+            os << "NULL";
+            continue;
+        }
+        os << **it;
     }
+
     os << "] (len: " << host.getGuestCount() << ") }";
     return os;
 }

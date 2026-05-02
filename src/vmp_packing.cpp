@@ -5,10 +5,10 @@
 namespace vmp
 {
 
-Packing::Packing(const std::vector<std::shared_ptr<Host>> &hosts) : guestCount(0)
+Packing::Packing(std::vector<std::shared_ptr<Host>> hosts) : hosts(std::move(hosts)), guestCount(0)
 {
-    for (const auto &host : hosts) {
-        addHost(host);
+    for (const auto &host : this->hosts) {
+        guestCount += host->getGuestCount();
     }
 }
 

@@ -3,7 +3,6 @@
 
 #include <vmp_guest.h>
 
-#include <queue>
 #include <unordered_set>
 #include <vector>
 
@@ -15,9 +14,9 @@ class TreeInstance
     friend class TreeInstanceParser;
 
   public:
-    size_t addInner(size_t parent, const std::unordered_set<int> &pages);
+    size_t addInner(size_t parent, std::unordered_set<int> pages);
     size_t addLeaf(size_t parent, const std::shared_ptr<const Guest> &guest,
-                   const std::unordered_set<int> &pages);
+                   std::unordered_set<int> pages);
 
     [[nodiscard]] const std::vector<size_t> &getNodeChildren(size_t node) const;
     [[nodiscard]] size_t getNodeParent(size_t node) const;
@@ -34,8 +33,8 @@ class TreeInstance
 
     static size_t getRootNode();
 
-    TreeInstance(size_t capacity, const std::unordered_set<int> &rootPages);
-    TreeInstance(size_t capacity, const std::unordered_set<int> &rootPages,
+    TreeInstance(size_t capacity, std::unordered_set<int> rootPages);
+    TreeInstance(size_t capacity, std::unordered_set<int> rootPages,
                  const std::shared_ptr<const Guest> &rootGuest);
 
   private:
@@ -51,9 +50,9 @@ class TreeInstance
         // This is a useful and reasonably expensive cache to keep at each node
         std::unordered_set<std::shared_ptr<const Guest>> guests;
 
-        Node(const size_t parent, const std::unordered_set<int> &pages,
-             const std::unordered_set<std::shared_ptr<const Guest>> &guests)
-            : parent(parent), pages(pages), guests(guests)
+        Node(const size_t parent, std::unordered_set<int> pages,
+             std::unordered_set<std::shared_ptr<const Guest>> guests)
+            : parent(parent), pages(std::move(pages)), guests(std::move(guests))
         {
         }
 

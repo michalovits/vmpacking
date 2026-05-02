@@ -13,10 +13,9 @@ class ClusterTreeInstance
     friend class ClusterTreeInstanceParser;
 
   public:
-    size_t addInner(size_t cluster, const std::vector<size_t> &parents,
-                    const std::unordered_set<int> &pages);
-    size_t addLeaf(const std::vector<size_t> &parents, const std::shared_ptr<const Guest> &guest,
-                   const std::unordered_set<int> &pages);
+    size_t addInner(size_t cluster, std::vector<size_t> parents, std::unordered_set<int> pages);
+    size_t addLeaf(std::vector<size_t> parents, const std::shared_ptr<const Guest> &guest,
+                   std::unordered_set<int> pages);
 
     size_t createCluster(size_t parent);
 
@@ -58,9 +57,9 @@ class ClusterTreeInstance
         std::shared_ptr<const Guest> guest;
         size_t cluster;
 
-        Node(const std::vector<size_t> &parents, const std::unordered_set<int> &pages,
+        Node(std::vector<size_t> parents, std::unordered_set<int> pages,
              const std::shared_ptr<const Guest> &guest, const size_t cluster)
-            : parents(parents), pages(pages), guest(guest), cluster(cluster)
+            : parents(std::move(parents)), pages(std::move(pages)), guest(guest), cluster(cluster)
         {
         }
     };
@@ -72,8 +71,8 @@ class ClusterTreeInstance
 
         std::vector<size_t> nodes;
 
-        Cluster(const size_t parent, const std::vector<size_t> &nodes)
-            : parent(parent), nodes(nodes)
+        Cluster(const size_t parent, std::vector<size_t> nodes)
+            : parent(parent), nodes(std::move(nodes))
         {
         }
 

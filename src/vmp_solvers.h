@@ -1,10 +1,10 @@
 #ifndef VMP_SOLVERS_H
 #define VMP_SOLVERS_H
 
-#include <cassert>
-#include <iostream>
 #include <vmp_packing.h>
 #include <vmp_solverutils.h>
+
+#include <cassert>
 
 namespace vmp
 {
@@ -43,10 +43,10 @@ Packing solveByNextFit(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    auto guests = instance.getGuests();
+    const auto &guests = instance.getGuests();
     proceedByNextFit(instance.getCapacity(), guests.begin(), guests.end(), hosts);
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -92,7 +92,7 @@ Packing solveByFirstFit(const InstanceType &instance)
     const auto &guests = instance.getGuests();
     proceedByFirstFit(instance.getCapacity(), guests.begin(), guests.end(), hosts);
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -149,7 +149,7 @@ Packing solveByEfficiency(const InstanceType &instance)
     const auto &guests = instance.getGuests();
     proceedByEfficiency(instance.getCapacity(), guests.begin(), guests.end(), hosts);
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -237,7 +237,7 @@ Packing solveByOverloadAndRemove(const InstanceType &instance)
     const auto &guests = instance.getGuests();
     proceedByOverloadAndRemove(instance.getCapacity(), guests.begin(), guests.end(), hosts);
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -258,7 +258,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
         std::shared_ptr<const Guest> bestGuest;
         std::shared_ptr<Host> bestHost;
 
-        double bestScore = std::numeric_limits<double>::min();
+        double bestScore = std::numeric_limits<double>::lowest();
 
         for (const auto &guest : unplaced) {
             if (!largestGuest || guest->getUniquePageCount() > largestGuest->getUniquePageCount()) {
@@ -288,7 +288,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
         unplaced.erase(bestGuest);
     }
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -318,6 +318,7 @@ Packing solveByTree(const TreeInstance &instance,
 
             Host host(workingInstance.getCapacity());
             host.addGuests(guests.begin(), guests.end());
+            assert(!host.isOverfull());
 
             hosts.push_back(std::make_shared<Host>(std::move(host)));
             break;
@@ -357,7 +358,7 @@ Packing solveByTree(const TreeInstance &instance,
         workingInstance.removeSubtree(minNode);
     }
 
-    return Packing(hosts);
+    return Packing(std::move(hosts));
 }
 
 /**
@@ -469,7 +470,7 @@ Packing solveByMaximiser(
         throw std::runtime_error("no valid packing found -- is a guest larger than the capacity?");
     }
 
-    return Packing(bestPacking->getHosts());
+    return std::move(*bestPacking);
 }
 
 }  // namespace vmp

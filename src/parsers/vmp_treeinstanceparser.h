@@ -35,6 +35,7 @@ class TreeInstanceParser
     std::unordered_map<std::filesystem::path, int> processedInstances;
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
+
     void parseChildren(TreeInstance &instance, size_t parent, const nlohmann::json &nodeJson) const;
 };
 

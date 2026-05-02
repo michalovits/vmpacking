@@ -53,9 +53,12 @@ struct ProfitOption
     [[nodiscard]] size_t hash() const
     {
         size_t h = std::hash<size_t>{}(cluster);
-        h ^= std::hash<size_t>{}(selectionMask);
-        h ^= std::hash<size_t>{}(childCount);
-        h ^= std::hash<size_t>{}(profitTarget);
+        auto mix = [&h](const size_t v) {
+            h ^= std::hash<size_t>{}(v) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
+        };
+        mix(selectionMask);
+        mix(childCount);
+        mix(profitTarget);
         return h;
     }
 };
@@ -68,8 +71,8 @@ struct GuestSelection
     std::vector<std::shared_ptr<const Guest>> guests;
 
     GuestSelection() : pageCount(std::numeric_limits<int>::max()) {}
-    GuestSelection(const size_t pageCount, const std::vector<std::shared_ptr<const Guest>> &guests)
-        : pageCount(pageCount), guests(guests)
+    GuestSelection(const size_t pageCount, std::vector<std::shared_ptr<const Guest>> guests)
+        : pageCount(pageCount), guests(std::move(guests))
     {
     }
 
