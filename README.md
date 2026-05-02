@@ -1,10 +1,8 @@
 # vmpacking (vmp)
 
-This library implements algorithms for the VM Packing problem as part of my St Andrews Undergraduate Dissertation.
-Even though the dissertation has been submitted as of 4 April 2025, this repository is under development.
-I hope to continue providing implementations of more algorithms as they come up.
+Algorithms for the overlap variant of the Bin Packing problem, VM Packing. Built as part of my undergraduate dissertation at St Andrews (spring 2025).
 
-Approximations currently ![implemented](src/vmp_solvers.h):
+Approximations currently [implemented](src/vmp_solvers.h):
 
 * Next Fit
 * First Fit
@@ -15,28 +13,22 @@ Approximations currently ![implemented](src/vmp_solvers.h):
 * Greedy Placement by Subset Efficiency (Reduction from VM Maximisation)
 * Cluster Tree-Based Placement (Reduction from VM Maximisation)
 
-All as credited in the relevant code.
+Static treatments (applied before or after solving):
 
-Static treatments:
-
-* Tree-/Cluster Tree-Ordering pre-treatment
+* Tree-Ordering pre-treatment
+* Cluster-Tree-Ordering pre-treatment
 * Decanting post-treatment
+
+Several of these algorithms implement, reuse or take inspiration from other research, credited in the relevant code.
 
 ## Building
 
-Before building, please make sure your toolchain supports the following:
+Requirements:
 
 * CMake 3.14 or newer
-* C++ 20 support, including `std::ranges`
+* C++ 20 with `std::ranges`
 
-Begin by cloning the repository:
-
-```shell
-git clone https://github.com/smich42/vmpacking.git
-cd vmpacking
-```
-
-Create a build directory:
+From the project root, create a build directory:
 
 ```shell
 mkdir -p build && cd build
@@ -53,3 +45,7 @@ Build the project:
 ```shell
 cmake --build .
 ```
+
+## Usage Examples
+
+See [examples](examples).
