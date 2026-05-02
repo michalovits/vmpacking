@@ -1,13 +1,11 @@
 #ifndef VMP_SOLVERUTILS_H
 #define VMP_SOLVERUTILS_H
 
-#include <vmp_solverutils.h>
-
-#include <ranges>
+#include <queue>
 #include <unordered_set>
+#include <vmp_commontypes.h>
 #include <vmp_guest.h>
 #include <vmp_host.h>
-#include <vmp_commontypes.h>
 
 namespace vmp
 {
@@ -29,7 +27,7 @@ void decantGuests(
 
         for (auto rightIt = leftIt + 1; rightIt != hosts.end(); ++rightIt) {
             const auto &rightHost = *rightIt;
-            const auto rightGuests = rightHost->getGuests();
+            const auto &rightGuests = rightHost->getGuests();
 
             const auto partitions = partitionGuests(rightGuests.begin(), rightGuests.end());
 

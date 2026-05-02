@@ -1,41 +1,42 @@
 #include <vmp_treeinstance.h>
 
 #include <cassert>
-#include <stack>
+#include <queue>
 
 namespace vmp
 {
 
-TreeInstance::TreeInstance(const size_t capacity, const std::unordered_set<int> &rootPages)
+TreeInstance::TreeInstance(const size_t capacity, std::unordered_set<int> rootPages)
     : capacity(capacity)
 {
     nodes = std::vector<std::optional<Node>>(ROOT_NODE + 1);
     nodes[ROOT_NODE] =
-        Node(ROOT_NODE, rootPages, std::unordered_set<std::shared_ptr<const Guest>>{});
+        Node(ROOT_NODE, std::move(rootPages), std::unordered_set<std::shared_ptr<const Guest>>{});
 }
 
-TreeInstance::TreeInstance(const size_t capacity, const std::unordered_set<int> &rootPages,
+TreeInstance::TreeInstance(const size_t capacity, std::unordered_set<int> rootPages,
                            const std::shared_ptr<const Guest> &rootGuest)
     : capacity(capacity)
 {
     nodes = std::vector<std::optional<Node>>(ROOT_NODE + 1);
-    nodes[ROOT_NODE] = Node(ROOT_NODE, rootPages, std::unordered_set{ rootGuest });
+    nodes[ROOT_NODE] = Node(ROOT_NODE, std::move(rootPages), std::unordered_set{ rootGuest });
 }
 
-size_t TreeInstance::addInner(const size_t parent, const std::unordered_set<int> &pages)
+size_t TreeInstance::addInner(const size_t parent, std::unordered_set<int> pages)
 {
     const size_t newNode = nodes.size();
-    nodes.push_back(std::make_optional<Node>(parent, pages,
+    nodes.push_back(std::make_optional<Node>(parent, std::move(pages),
                                              std::unordered_set<std::shared_ptr<const Guest>>{}));
     nodes[parent]->children.push_back(newNode);
     return newNode;
 }
 
 size_t TreeInstance::addLeaf(size_t parent, const std::shared_ptr<const Guest> &guest,
-                             const std::unordered_set<int> &pages)
+                             std::unordered_set<int> pages)
 {
     const size_t newNode = nodes.size();
-    nodes.push_back(std::make_optional<Node>(parent, pages, std::unordered_set{ guest }));
+    nodes.push_back(
+        std::make_optional<Node>(parent, std::move(pages), std::unordered_set{ guest }));
     leaves.push_back(newNode);
     nodes[parent]->children.push_back(newNode);
 

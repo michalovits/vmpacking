@@ -39,7 +39,7 @@ inline std::ostream &operator<<(std::ostream &os, const PackingValidity validity
 class Packing
 {
   public:
-    explicit Packing(const std::vector<std::shared_ptr<Host>> &hosts);
+    explicit Packing(std::vector<std::shared_ptr<Host>> hosts);
 
     Packing(Packing &other) noexcept = default;
     Packing(Packing &&other) noexcept = default;

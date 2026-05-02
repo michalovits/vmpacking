@@ -1,13 +1,13 @@
 #include <vmp_generalinstance.h>
 
-#include <sstream>
+#include <ostream>
 
 namespace vmp
 {
 
 GeneralInstance::GeneralInstance(const size_t capacity,
-                                 const std::vector<std::shared_ptr<const Guest>> &guests)
-    : capacity(capacity), guests(guests)
+                                 std::vector<std::shared_ptr<const Guest>> guests)
+    : capacity(capacity), guests(std::move(guests))
 {
 }
 
@@ -29,20 +29,22 @@ size_t GeneralInstance::getCapacity() const
 std::ostream &operator<<(std::ostream &os, const GeneralInstance &instance)
 {
     os << "Instance{ capacity=" << instance.getCapacity() << ", guests=[";
-    for (size_t i = 0; i < instance.getGuests().size(); ++i) {
-        if (i > 0) {
+
+    const auto &guests = instance.getGuests();
+    for (size_t i = 0; i < guests.size(); ++i) {
+        if (i > 0)
             os << ", ";
-        }
+
         os << "{";
-        const auto &pages = instance.getGuests()[i]->pages;
+        const auto &pages = guests[i]->pages;
         for (auto it = pages.begin(); it != pages.end(); ++it) {
-            if (it != pages.begin()) {
+            if (it != pages.begin())
                 os << ",";
-            }
             os << *it;
         }
         os << "}";
     }
+
     os << "] }";
     return os;
 }

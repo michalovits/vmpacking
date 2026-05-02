@@ -13,8 +13,7 @@ namespace vmp
 class ClusterTreeInstanceParser
 {
   public:
-    explicit ClusterTreeInstanceParser(std::string directory,
-                                       std::string capacityName = "capacity",
+    explicit ClusterTreeInstanceParser(std::string directory, std::string capacityName = "capacity",
                                        std::string nodesName = "nodes",
                                        std::string nodeIdName = "node_id",
                                        std::string nodeParentsName = "node_parents",
@@ -42,6 +41,7 @@ class ClusterTreeInstanceParser
     std::unordered_map<std::filesystem::path, int> processedInstances;
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
+
     void parseClusterSubtree(ClusterTreeInstance &instance, size_t parentCluster,
                              const nlohmann::json &clusterJson,
                              std::unordered_map<size_t, size_t> &fromJsonNode,

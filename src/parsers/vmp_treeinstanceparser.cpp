@@ -33,12 +33,12 @@ void TreeInstanceParser::parseChildren(TreeInstance &instance, const size_t pare
                                        const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
-        const std::unordered_set<int> childPages =
-            childJson[pagesName].get<std::unordered_set<int>>();
+        std::unordered_set<int> childPages = childJson[pagesName].get<std::unordered_set<int>>();
 
-        const size_t child = childJson.contains(guestPagesName)
-                                 ? instance.addLeaf(parent, parseGuest(childJson), childPages)
-                                 : instance.addInner(parent, childPages);
+        const size_t child =
+            childJson.contains(guestPagesName)
+                ? instance.addLeaf(parent, parseGuest(childJson), std::move(childPages))
+                : instance.addInner(parent, std::move(childPages));
 
         if (childJson.contains(childrenName)) {
             parseChildren(instance, child, childJson);
@@ -77,13 +77,12 @@ std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
             assert(rootNodeJson.contains(capacityName));
 
             const size_t capacity = rootNodeJson[capacityName].get<size_t>();
-            const std::unordered_set<int> rootPages =
-                rootNodeJson[pagesName].get<std::unordered_set<int>>();
             const auto rootGuest = parseGuest(rootNodeJson);
+            auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
             TreeInstance instance = rootGuest == nullptr
-                                        ? TreeInstance(capacity, rootPages)
-                                        : TreeInstance(capacity, rootPages, rootGuest);
+                                        ? TreeInstance(capacity, std::move(rootPages))
+                                        : TreeInstance(capacity, std::move(rootPages), rootGuest);
 
             if (rootNodeJson.contains(childrenName)) {
                 parseChildren(instance, TreeInstance::getRootNode(), rootNodeJson);
