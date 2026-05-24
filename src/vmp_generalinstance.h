@@ -1,6 +1,7 @@
 #ifndef SOLVERS_INSTANCE_H
 #define SOLVERS_INSTANCE_H
 
+#include <memory>
 #include <vector>
 #include <vmp_guest.h>
 

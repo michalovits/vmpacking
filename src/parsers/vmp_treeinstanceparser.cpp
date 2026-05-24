@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <fstream>
-#include <json.hpp>
 
 using json = nlohmann::json;
 
@@ -80,9 +79,11 @@ std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
             const auto rootGuest = parseGuest(rootNodeJson);
             auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeInstance instance = rootGuest == nullptr
-                                        ? TreeInstance(capacity, std::move(rootPages))
-                                        : TreeInstance(capacity, std::move(rootPages), rootGuest);
+            TreeInstance instance(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
+                                                                 : std::move(rootPages));
+            if (rootGuest != nullptr) {
+                instance.addLeaf(TreeInstance::getRootNode(), rootGuest, std::move(rootPages));
+            }
 
             if (rootNodeJson.contains(childrenName)) {
                 parseChildren(instance, TreeInstance::getRootNode(), rootNodeJson);

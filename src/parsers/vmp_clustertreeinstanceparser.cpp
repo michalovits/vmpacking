@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <fstream>
-#include <json.hpp>
 
 using json = nlohmann::json;
 

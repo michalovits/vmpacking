@@ -14,14 +14,6 @@ TreeInstance::TreeInstance(const size_t capacity, std::unordered_set<int> rootPa
         Node(ROOT_NODE, std::move(rootPages), std::unordered_set<std::shared_ptr<const Guest>>{});
 }
 
-TreeInstance::TreeInstance(const size_t capacity, std::unordered_set<int> rootPages,
-                           const std::shared_ptr<const Guest> &rootGuest)
-    : capacity(capacity)
-{
-    nodes = std::vector<std::optional<Node>>(ROOT_NODE + 1);
-    nodes[ROOT_NODE] = Node(ROOT_NODE, std::move(rootPages), std::unordered_set{ rootGuest });
-}
-
 size_t TreeInstance::addInner(const size_t parent, std::unordered_set<int> pages)
 {
     const size_t newNode = nodes.size();
@@ -101,8 +93,9 @@ const std::vector<size_t> &TreeInstance::getLeaves() const
     return leaves;
 }
 
-void TreeInstance::removeSubtree(const size_t root)
+void TreeInstance::forceDropSubtree(const size_t root)
 {
+    // Clean up references to these guests
     const auto &guestsToRemove = nodes[root]->guests;
     for (int node = 0; node < nodes.size(); ++node) {
         if (node == root || !nodes[node].has_value()) {
@@ -113,6 +106,10 @@ void TreeInstance::removeSubtree(const size_t root)
         }
     }
 
+    // Detach subtree
+    std::erase(nodes[nodes[root]->parent]->children, root);
+
+    // Erase all nodes in subtree
     std::queue<size_t> nodesToRemove;
     nodesToRemove.push(root);
 
@@ -120,17 +117,9 @@ void TreeInstance::removeSubtree(const size_t root)
         const size_t node = nodesToRemove.front();
         nodesToRemove.pop();
 
-        for (size_t child : nodes[node]->children) {
+        for (const size_t child : nodes[node]->children) {
             nodesToRemove.push(child);
         }
-
-        const size_t parent = nodes[node]->parent;
-        auto &parentChildren = nodes[parent]->children;
-        const auto it = std::ranges::find(parentChildren, node);
-        if (it != parentChildren.end()) {
-            parentChildren.erase(it);
-        }
-
         nodes[node].reset();
     }
 }

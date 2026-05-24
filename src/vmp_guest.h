@@ -1,6 +1,7 @@
 #ifndef SOLVERS_GUEST_H
 #define SOLVERS_GUEST_H
 
+#include <iosfwd>
 #include <unordered_set>
 
 namespace vmp

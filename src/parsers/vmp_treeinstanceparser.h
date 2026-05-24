@@ -3,7 +3,7 @@
 
 #include <vmp_treeinstance.h>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <set>
 #include <vector>
 

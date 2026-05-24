@@ -33,7 +33,7 @@ int main()
 
     // Using the tree solver with an intermediate solver which iterates over an std::unordered_set
     // collection of guests
-    using SetGuestIt = std::unordered_set<std::shared_ptr<const vmp::Guest>>::iterator;
+    using SetGuestIt = std::unordered_set<std::shared_ptr<const vmp::Guest>>::const_iterator;
 
     printResult(vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByFirstFit));
     printResult(vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByOverloadAndRemove));

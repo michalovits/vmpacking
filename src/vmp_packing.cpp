@@ -14,7 +14,7 @@ Packing::Packing(std::vector<std::shared_ptr<Host>> hosts) : hosts(std::move(hos
 
 void Packing::decantGuests()
 {
-    using SetGuestIt = std::unordered_set<std::shared_ptr<const Guest>>::iterator;
+    using SetGuestIt = std::unordered_set<std::shared_ptr<const Guest>>::const_iterator;
     decantGuestByAllPartitioners<SetGuestIt>(hosts);
 }
 

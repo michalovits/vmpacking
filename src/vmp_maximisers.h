@@ -5,8 +5,15 @@
 #include <vmp_commontypes.h>
 #include <vmp_packing.h>
 
+#include <algorithm>
+#include <functional>
+#include <memory>
 #include <numeric>
+#include <optional>
 #include <ranges>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace vmp
 {
