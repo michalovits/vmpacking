@@ -5,6 +5,7 @@ add_executable(vmp_unit_tests
         test_treeinstance.cpp
         test_clustertreeinstance.cpp
         test_packing.cpp
+        test_solverutils.cpp
 )
 
 target_link_libraries(vmp_unit_tests PRIVATE vmp Catch2::Catch2WithMain)
