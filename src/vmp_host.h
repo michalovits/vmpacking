@@ -37,7 +37,7 @@ class Host
     template <SharedPtrIterator<const Guest> GuestIt>
     bool accommodatesGuests(GuestIt guestsBegin, GuestIt guestsEnd) const
     {
-        return countPagesWithGuests(guestsBegin, guestsEnd) <= capacity;
+        return countPagesWithGuests(guestsBegin, guestsEnd) <= capacity_;
     }
 
     /**
@@ -71,12 +71,12 @@ class Host
         std::unordered_set<int> newPages;
         for (; guestsBegin != guestsEnd; ++guestsBegin) {
             for (const int page : (*guestsBegin)->pages) {
-                if (!pageFrequencies.contains(page)) {
+                if (!pageFrequencies_.contains(page)) {
                     newPages.insert(page);
                 }
             }
         }
-        return newPages.size() + pageFrequencies.size();
+        return newPages.size() + pageFrequencies_.size();
     }
 
     /**
@@ -85,22 +85,22 @@ class Host
      * @param page the page
      * @return the number of guests
      */
-    [[nodiscard]] size_t getPageFrequency(int page) const;
+    [[nodiscard]] size_t pageFrequency(int page) const;
 
     /**
      * Get a mapping of each page to the number of guests on this host that share it
      *
      * @return the number of guests
      */
-    [[nodiscard]] const std::unordered_map<int, int> &getPageFrequencies() const;
+    [[nodiscard]] const std::unordered_map<int, int> &pageFrequencies() const;
 
     /**
      * The number of *unique* pages on this host
      *
      * @return the number of *unique* pages on this host
      */
-    [[nodiscard]] size_t getUniquePageCount() const;
-    [[nodiscard]] size_t getGuestCount() const;
+    [[nodiscard]] size_t uniquePageCount() const;
+    [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] bool isOverfull() const;
     [[nodiscard]] bool hasGuest(const std::shared_ptr<const Guest> &guest) const;
 
@@ -108,8 +108,8 @@ class Host
     bool removeGuest(const std::shared_ptr<const Guest> &guest);
     void clearGuests();
 
-    [[nodiscard]] size_t getCapacity() const;
-    [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &getGuests() const;
+    [[nodiscard]] size_t capacity() const;
+    [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &guests() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Host &host);
 
@@ -124,10 +124,10 @@ class Host
   private:
     // Store page frequencies as the number of guests that have a page is
     // useful some Grange heuristics
-    std::unordered_map<int, int> pageFrequencies;
+    std::unordered_map<int, int> pageFrequencies_;
 
-    const size_t capacity;
-    std::unordered_set<std::shared_ptr<const Guest>> guests;
+    const size_t capacity_;
+    std::unordered_set<std::shared_ptr<const Guest>> guests_;
 };
 
 }  // namespace vmp

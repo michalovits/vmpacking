@@ -6,159 +6,162 @@
 namespace vmp
 {
 
-ClusterTreeInstance::ClusterTreeInstance(const size_t capacity) : capacity(capacity)
+ClusterTreeInstance::ClusterTreeInstance(const size_t capacity) : capacity_(capacity)
 {
-    clusters = std::vector<Cluster>(ROOT_CLUSTER + 1);
-    clusters[ROOT_CLUSTER] = Cluster(ROOT_CLUSTER, {});
+    clusters_ = std::vector<Cluster>(ROOT_CLUSTER + 1);
+    clusters_[ROOT_CLUSTER] = Cluster(ROOT_CLUSTER, {});
 }
 
-bool ClusterTreeInstance::checkNodesAreInCluster(const std::vector<size_t> &nodes,
-                                                 const size_t cluster) const
+bool ClusterTreeInstance::allInCluster(const std::vector<size_t> &nodes, const size_t cluster) const
 {
-    return std::ranges::all_of(
-        nodes, [&](const size_t node) { return this->nodes[node].cluster == cluster; });
+    const auto belongs = [&](const size_t node) {
+        return this->nodes_[node].cluster == cluster;
+    };
+    return std::ranges::all_of(nodes, belongs);
 }
 
-size_t ClusterTreeInstance::addInner(const size_t cluster, std::vector<size_t> parents,
-                                     std::unordered_set<int> pages)
+size_t ClusterTreeInstance::addInnerNode(const size_t cluster, std::vector<size_t> parents,
+                                         std::unordered_set<int> pages)
 {
-    assert(checkNodesAreInCluster(parents, clusters[cluster].parent));
+    assert(allInCluster(parents, clusters_[cluster].parent));
+
     for ([[maybe_unused]] const size_t node : parents) {
-        assert(!nodeIsLeaf(node));
+        assert(!isLeafNode(node));
     }
 
-    const size_t newNode = nodes.size();
+    const size_t newNode = nodes_.size();
     for (const size_t parent : parents) {
-        nodes[parent].children.push_back(newNode);
+        nodes_[parent].children.push_back(newNode);
     }
 
-    nodes.emplace_back(std::move(parents), std::move(pages), nullptr, cluster);
-    clusters[cluster].nodes.push_back(newNode);
+    nodes_.emplace_back(std::move(parents), std::move(pages), nullptr, cluster);
+    clusters_[cluster].nodes.push_back(newNode);
 
     return newNode;
 }
 
-size_t ClusterTreeInstance::addLeaf(std::vector<size_t> parents,
-                                    const std::shared_ptr<const Guest> &guest,
-                                    std::unordered_set<int> pages)
+size_t ClusterTreeInstance::addLeafNode(std::vector<size_t> parents,
+                                        const std::shared_ptr<const Guest> &guest,
+                                        std::unordered_set<int> pages)
 {
     assert(!parents.empty());
 
-    const size_t parentCluster = nodes[parents[0]].cluster;
-    assert(checkNodesAreInCluster(parents, parentCluster));
+    const size_t parentCluster = nodes_[parents[0]].cluster;
+    assert(allInCluster(parents, parentCluster));
 
-    const size_t newNode = nodes.size();
+    const size_t newNode = nodes_.size();
     const size_t newCluster = createCluster(parentCluster);
 
     for (const size_t parent : parents) {
-        nodes[parent].children.push_back(newNode);
+        nodes_[parent].children.push_back(newNode);
 
-        if (std::ranges::find(clusters[parentCluster].children, newCluster) ==
-            clusters[parentCluster].children.end()) {
-            clusters[nodes[parent].cluster].children.push_back(newCluster);
+        if (std::ranges::find(clusters_[parentCluster].children, newCluster) ==
+            clusters_[parentCluster].children.end()) {
+            clusters_[nodes_[parent].cluster].children.push_back(newCluster);
         }
     }
 
-    nodes.emplace_back(std::move(parents), std::move(pages), guest, newCluster);
-    clusters[newCluster].nodes.push_back(newNode);
-    this->leaves.push_back(newNode);
+    nodes_.emplace_back(std::move(parents), std::move(pages), guest, newCluster);
+    clusters_[newCluster].nodes.push_back(newNode);
+    this->leaves_.push_back(newNode);
 
     return newNode;
 }
 
 size_t ClusterTreeInstance::createCluster(const size_t parent)
 {
-    const size_t newCluster = clusters.size();
+    const size_t newCluster = clusters_.size();
 
-    clusters.emplace_back(parent, std::vector<size_t>());
-    clusters[parent].children.push_back(newCluster);
+    clusters_.emplace_back(parent, std::vector<size_t>());
+    clusters_[parent].children.push_back(newCluster);
 
     return newCluster;
 }
 
-size_t ClusterTreeInstance::getRootCluster()
+size_t ClusterTreeInstance::rootCluster()
 {
     return ROOT_CLUSTER;
 }
 
-std::vector<std::shared_ptr<const Guest>> ClusterTreeInstance::getGuests() const
+std::vector<std::shared_ptr<const Guest>> ClusterTreeInstance::guests() const
 {
     std::vector<std::shared_ptr<const Guest>> guests;
-    guests.reserve(leaves.size());
-    for (const auto &leaf : leaves) {
-        guests.emplace_back(getNodeGuest(leaf));
+    guests.reserve(leaves_.size());
+
+    for (const auto &leaf : leaves_) {
+        guests.emplace_back(guestOfNode(leaf));
     }
     return guests;
 }
 
-size_t ClusterTreeInstance::getCapacity() const
+size_t ClusterTreeInstance::capacity() const
 {
-    return capacity;
+    return capacity_;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::getClusterNodes(const size_t cluster) const
+const std::vector<size_t> &ClusterTreeInstance::clusterNodes(const size_t cluster) const
 {
-    return clusters[cluster].nodes;
+    return clusters_[cluster].nodes;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::getClusterChildren(const size_t cluster) const
+const std::vector<size_t> &ClusterTreeInstance::childrenOfCluster(const size_t cluster) const
 {
-    return clusters[cluster].children;
+    return clusters_[cluster].children;
 }
 
-size_t ClusterTreeInstance::getClusterParent(const size_t cluster) const
+size_t ClusterTreeInstance::parentOfCluster(const size_t cluster) const
 {
-    return clusters[cluster].parent;
+    return clusters_[cluster].parent;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::getNodeParents(const size_t node) const
+const std::vector<size_t> &ClusterTreeInstance::parentsOfNode(const size_t node) const
 {
-    return nodes[node].parents;
+    return nodes_[node].parents;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::getNodeChildren(const size_t node) const
+const std::vector<size_t> &ClusterTreeInstance::childrenOfNode(const size_t node) const
 {
-    return nodes[node].children;
+    return nodes_[node].children;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::getLeafNodes() const
+const std::vector<size_t> &ClusterTreeInstance::leafNodes() const
 {
-    return this->leaves;
+    return this->leaves_;
 }
 
-size_t ClusterTreeInstance::getClusterCount() const
+size_t ClusterTreeInstance::clusterCount() const
 {
-    return this->clusters.size();
+    return this->clusters_.size();
 }
 
-const std::unordered_set<int> &ClusterTreeInstance::getNodePages(const size_t node) const
+const std::unordered_set<int> &ClusterTreeInstance::pagesOfNode(const size_t node) const
 {
-    return nodes[node].pages;
+    return nodes_[node].pages;
 }
 
-const std::shared_ptr<const Guest> &ClusterTreeInstance::getNodeGuest(const size_t node) const
+const std::shared_ptr<const Guest> &ClusterTreeInstance::guestOfNode(const size_t node) const
 {
-    return nodes[node].guest;
+    return nodes_[node].guest;
 }
 
-bool ClusterTreeInstance::nodeIsLeaf(const size_t node) const
+bool ClusterTreeInstance::isLeafNode(const size_t node) const
 {
-    return nodes[node].guest != nullptr;
+    return nodes_[node].guest != nullptr;
 }
 
-bool ClusterTreeInstance::clusterIsLeaf(const size_t cluster) const
+bool ClusterTreeInstance::isLeafCluster(const size_t cluster) const
 {
-    return clusters[cluster].nodes.size() == 1 && nodeIsLeaf(clusters[cluster].nodes[0]);
+    return clusters_[cluster].nodes.size() == 1 && isLeafNode(clusters_[cluster].nodes[0]);
 }
 
-size_t ClusterTreeInstance::getNodeCount() const
+size_t ClusterTreeInstance::nodeCount() const
 {
-    return nodes.size();
+    return nodes_.size();
 }
 
-size_t ClusterTreeInstance::nodeCountOf(const size_t cluster) const
+size_t ClusterTreeInstance::nodeCountOfCluster(const size_t cluster) const
 {
-    return clusters[cluster].nodes.size();
+    return clusters_[cluster].nodes.size();
 }
 
 }  // namespace vmp

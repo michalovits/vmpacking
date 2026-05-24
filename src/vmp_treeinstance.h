@@ -16,31 +16,33 @@ class TreeInstance
     friend class TreeInstanceParser;
 
   public:
-    size_t addInner(size_t parent, std::unordered_set<int> pages);
-    size_t addLeaf(size_t parent, const std::shared_ptr<const Guest> &guest,
-                   std::unordered_set<int> pages);
+    size_t addInnerNode(size_t parent, std::unordered_set<int> pages);
+    size_t addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,
+                       std::unordered_set<int> pages);
 
-    [[nodiscard]] const std::vector<size_t> &getNodeChildren(size_t node) const;
-    [[nodiscard]] size_t getNodeParent(size_t node) const;
-    [[nodiscard]] const std::unordered_set<int> &getNodePages(size_t node) const;
-    [[nodiscard]] std::shared_ptr<const Guest> getNodeGuest(size_t node) const;
+    [[nodiscard]] const std::vector<size_t> &childrenOfNode(size_t node) const;
+    [[nodiscard]] size_t parentOfNode(size_t node) const;
+
+    [[nodiscard]] const std::unordered_set<int> &pagesOfNode(size_t node) const;
+    [[nodiscard]] std::shared_ptr<const Guest> guestOfNode(size_t node) const;
     [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &
-    getSubtreeGuests(size_t root) const;
-    [[nodiscard]] size_t getNodeCount() const;
-    [[nodiscard]] size_t getCapacity() const;
-    [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &getGuests() const;
-    [[nodiscard]] const std::vector<size_t> &getLeaves() const;
+    guestsOfSubtree(size_t root) const;
+    [[nodiscard]] size_t nodeCount() const;
 
-    [[nodiscard]] bool nodeIsLeaf(size_t node) const;
+    [[nodiscard]] const std::vector<size_t> &leafNodes() const;
+    [[nodiscard]] bool isLeafNode(size_t node) const;
+
+    [[nodiscard]] size_t capacity() const;
+    [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &guests() const;
 
     /// Removes the subtree rooted at `root`.
     /// Removes references to the subtree's guests from every ancestor's guest cache.
     ///
     /// Dangerous: does not rebuild the tree. Some inner nodes may now be redundant
     /// (contain pages that belong to only one child).
-    void forceDropSubtree(size_t root);
+    void eraseSubtree(size_t root);
 
-    static size_t getRootNode();
+    static size_t rootNode();
 
     TreeInstance(size_t capacity, std::unordered_set<int> rootPages);
 
@@ -64,10 +66,10 @@ class TreeInstance
         }
     };
 
-    std::vector<std::optional<Node>> nodes;
-    std::vector<size_t> leaves;
+    std::vector<std::optional<Node>> nodes_;
+    std::vector<size_t> leaves_;
 
-    const size_t capacity;
+    const size_t capacity_;
     static constexpr size_t ROOT_NODE = 0;
 };
 

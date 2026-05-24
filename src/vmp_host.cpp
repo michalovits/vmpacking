@@ -6,14 +6,14 @@
 namespace vmp
 {
 
-Host::Host(const size_t capacity) : capacity(capacity) {}
+Host::Host(const size_t capacity) : capacity_(capacity) {}
 
 bool Host::addGuest(const std::shared_ptr<const Guest> &guest)
 {
     for (const int page : guest->pages) {
-        ++pageFrequencies[page];
+        ++pageFrequencies_[page];
     }
-    guests.insert(guest);
+    guests_.insert(guest);
 
     return isOverfull();
 }
@@ -21,82 +21,82 @@ bool Host::addGuest(const std::shared_ptr<const Guest> &guest)
 bool Host::removeGuest(const std::shared_ptr<const Guest> &guest)
 {
     for (const int page : guest->pages) {
-        if (--pageFrequencies[page] == 0) {
-            pageFrequencies.erase(page);
+        if (--pageFrequencies_[page] == 0) {
+            pageFrequencies_.erase(page);
         }
     }
 
-    guests.erase(guest);
+    guests_.erase(guest);
 
     return isOverfull();
 }
 
 void Host::clearGuests()
 {
-    guests.clear();
-    pageFrequencies.clear();
+    guests_.clear();
+    pageFrequencies_.clear();
 }
 
-size_t Host::getCapacity() const
+size_t Host::capacity() const
 {
-    return capacity;
+    return capacity_;
 }
 
-const std::unordered_set<std::shared_ptr<const Guest>> &Host::getGuests() const
+const std::unordered_set<std::shared_ptr<const Guest>> &Host::guests() const
 {
-    return guests;
+    return guests_;
 }
 
 bool Host::accommodatesGuest(const Guest &guest) const
 {
-    return countPagesWithGuest(guest) <= capacity;
+    return countPagesWithGuest(guest) <= capacity_;
 }
 
-const std::unordered_map<int, int> &Host::getPageFrequencies() const
+const std::unordered_map<int, int> &Host::pageFrequencies() const
 {
-    return pageFrequencies;
+    return pageFrequencies_;
 }
 
-size_t Host::getPageFrequency(const int page) const
+size_t Host::pageFrequency(const int page) const
 {
-    return pageFrequencies.contains(page) ? pageFrequencies.at(page) : 0;
+    return pageFrequencies_.contains(page) ? pageFrequencies_.at(page) : 0;
 }
 
-size_t Host::getUniquePageCount() const
+size_t Host::uniquePageCount() const
 {
-    return pageFrequencies.size();
+    return pageFrequencies_.size();
 }
 
 size_t Host::countPagesWithGuest(const Guest &guest) const
 {
-    return getUniquePageCount() + guest.getUniquePageCount() - guest.countUniquePagesOn(*this);
+    return uniquePageCount() + guest.uniquePageCount() - guest.countUniquePagesOn(*this);
 }
 
 size_t Host::countPagesNotOn(const Guest &guest) const
 {
-    return getUniquePageCount() - guest.countUniquePagesOn(*this);
+    return uniquePageCount() - guest.countUniquePagesOn(*this);
 }
 
-size_t Host::getGuestCount() const
+size_t Host::guestCount() const
 {
-    return guests.size();
+    return guests_.size();
 }
 
 bool Host::isOverfull() const
 {
-    return pageFrequencies.size() > capacity;
+    return pageFrequencies_.size() > capacity_;
 }
 
 bool Host::hasGuest(const std::shared_ptr<const Guest> &guest) const
 {
-    return guests.contains(guest);
+    return guests_.contains(guest);
 }
 
 std::ostream &operator<<(std::ostream &os, const Host &host)
 {
-    os << "Host{ capacity=" << host.capacity << ", [";
+    os << "Host{ capacity=" << host.capacity_ << ", [";
 
-    const auto &guests = host.guests;
+    const auto &guests = host.guests_;
     for (auto it = guests.begin(); it != guests.end(); ++it) {
         if (it != guests.begin()) {
             os << ", ";
@@ -108,7 +108,7 @@ std::ostream &operator<<(std::ostream &os, const Host &host)
         os << **it;
     }
 
-    os << "] (len: " << host.getGuestCount() << ") }";
+    os << "] (len: " << host.guestCount() << ") }";
     return os;
 }
 

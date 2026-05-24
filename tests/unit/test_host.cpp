@@ -10,11 +10,11 @@ using vmp::testing::makeGuests;
 TEST_CASE("Host initialisation", "[host]")
 {
     const Host host(5);
-    CHECK(host.getCapacity() == 5);
-    CHECK(host.getGuestCount() == 0);
-    CHECK(host.getUniquePageCount() == 0);
-    CHECK(host.getGuests().empty());
-    CHECK(host.getPageFrequencies().empty());
+    CHECK(host.capacity() == 5);
+    CHECK(host.guestCount() == 0);
+    CHECK(host.uniquePageCount() == 0);
+    CHECK(host.guests().empty());
+    CHECK(host.pageFrequencies().empty());
     CHECK_FALSE(host.isOverfull());
 }
 
@@ -26,12 +26,12 @@ TEST_CASE("Host::addGuest with unique pages", "[host]")
     host.addGuest(g);
 
     CHECK(host.hasGuest(g));
-    CHECK(host.getGuestCount() == 1);
-    CHECK(host.getUniquePageCount() == 3);
-    CHECK(host.getPageFrequency(1) == 1);
-    CHECK(host.getPageFrequency(2) == 1);
-    CHECK(host.getPageFrequency(3) == 1);
-    CHECK(host.getPageFrequency(99) == 0);
+    CHECK(host.guestCount() == 1);
+    CHECK(host.uniquePageCount() == 3);
+    CHECK(host.pageFrequency(1) == 1);
+    CHECK(host.pageFrequency(2) == 1);
+    CHECK(host.pageFrequency(3) == 1);
+    CHECK(host.pageFrequency(99) == 0);
 }
 
 TEST_CASE("Host::addGuest with shared pages", "[host]")
@@ -40,10 +40,10 @@ TEST_CASE("Host::addGuest with shared pages", "[host]")
     host.addGuest(makeGuest({ 1, 2 }));
     host.addGuest(makeGuest({ 2, 3 }));
 
-    CHECK(host.getUniquePageCount() == 3);
-    CHECK(host.getPageFrequency(1) == 1);
-    CHECK(host.getPageFrequency(2) == 2);
-    CHECK(host.getPageFrequency(3) == 1);
+    CHECK(host.uniquePageCount() == 3);
+    CHECK(host.pageFrequency(1) == 1);
+    CHECK(host.pageFrequency(2) == 2);
+    CHECK(host.pageFrequency(3) == 1);
 }
 
 TEST_CASE("Host::addGuest makes overfull", "[host]")
@@ -68,11 +68,11 @@ TEST_CASE("Host::addGuest -> ::removeGuest", "[host]")
 
     CHECK_FALSE(host.hasGuest(g1));
     CHECK(host.hasGuest(g2));
-    CHECK(host.getGuestCount() == 1);
-    CHECK(host.getUniquePageCount() == 2);
-    CHECK(host.getPageFrequency(1) == 0);
-    CHECK(host.getPageFrequency(2) == 1);
-    CHECK(host.getPageFrequency(3) == 1);
+    CHECK(host.guestCount() == 1);
+    CHECK(host.uniquePageCount() == 2);
+    CHECK(host.pageFrequency(1) == 0);
+    CHECK(host.pageFrequency(2) == 1);
+    CHECK(host.pageFrequency(3) == 1);
 }
 
 TEST_CASE("Host page frequencies erase entries", "[host]")
@@ -82,8 +82,8 @@ TEST_CASE("Host page frequencies erase entries", "[host]")
     host.addGuest(g);
     host.removeGuest(g);
 
-    CHECK_FALSE(host.getPageFrequencies().contains(1));
-    CHECK(host.getUniquePageCount() == 0);
+    CHECK_FALSE(host.pageFrequencies().contains(1));
+    CHECK(host.uniquePageCount() == 0);
 }
 
 TEST_CASE("Host::clearGuests", "[host]")
@@ -94,10 +94,10 @@ TEST_CASE("Host::clearGuests", "[host]")
 
     host.clearGuests();
 
-    CHECK(host.getGuestCount() == 0);
-    CHECK(host.getGuests().empty());
-    CHECK(host.getUniquePageCount() == 0);
-    CHECK(host.getPageFrequencies().empty());
+    CHECK(host.guestCount() == 0);
+    CHECK(host.guests().empty());
+    CHECK(host.uniquePageCount() == 0);
+    CHECK(host.pageFrequencies().empty());
 }
 
 TEST_CASE("Host::accommodatesGuest", "[host]")
@@ -191,6 +191,6 @@ TEST_CASE("Host::addGuests ranged", "[host]")
 
     host.addGuests(guests.begin(), guests.end());
 
-    CHECK(host.getGuestCount() == 3);
-    CHECK(host.getUniquePageCount() == 3);
+    CHECK(host.guestCount() == 3);
+    CHECK(host.uniquePageCount() == 3);
 }

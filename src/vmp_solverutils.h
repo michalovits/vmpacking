@@ -32,7 +32,7 @@ void decantGuests(
 
         for (auto rightIt = leftIt + 1; rightIt != hosts.end(); ++rightIt) {
             const auto &rightHost = *rightIt;
-            const auto &rightGuests = rightHost->getGuests();
+            const auto &rightGuests = rightHost->guests();
 
             const auto partitions = partitionGuests(rightGuests.begin(), rightGuests.end());
 
@@ -48,7 +48,7 @@ void decantGuests(
             }
         }
     }
-    std::erase_if(hosts, [](const auto &host) { return host->getGuests().empty(); });
+    std::erase_if(hosts, [](const auto &host) { return host->guests().empty(); });
 }
 
 template <SharedPtrIterator<const Guest> GuestIt>
@@ -68,7 +68,7 @@ std::unordered_map<int, int> calculatePageFrequencies(HostIt hostsBegin, HostIt 
 {
     std::unordered_map<int, int> frequencies;
     for (; hostsBegin != hostsEnd; ++hostsBegin) {
-        for (const auto &guest : (*hostsBegin)->getGuests()) {
+        for (const auto &guest : (*hostsBegin)->guests()) {
             for (const auto &page : guest->pages) {
                 ++frequencies[page];
             }

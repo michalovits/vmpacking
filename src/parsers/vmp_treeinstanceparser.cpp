@@ -36,8 +36,8 @@ void TreeInstanceParser::parseChildren(TreeInstance &instance, const size_t pare
 
         const size_t child =
             childJson.contains(guestPagesName)
-                ? instance.addLeaf(parent, parseGuest(childJson), std::move(childPages))
-                : instance.addInner(parent, std::move(childPages));
+                ? instance.addLeafNode(parent, parseGuest(childJson), std::move(childPages))
+                : instance.addInnerNode(parent, std::move(childPages));
 
         if (childJson.contains(childrenName)) {
             parseChildren(instance, child, childJson);
@@ -81,11 +81,11 @@ std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
             TreeInstance instance(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
                                                                  : std::move(rootPages));
             if (rootGuest != nullptr) {
-                instance.addLeaf(TreeInstance::getRootNode(), rootGuest, std::move(rootPages));
+                instance.addLeafNode(TreeInstance::rootNode(), rootGuest, std::move(rootPages));
             }
 
             if (rootNodeJson.contains(childrenName)) {
-                parseChildren(instance, TreeInstance::getRootNode(), rootNodeJson);
+                parseChildren(instance, TreeInstance::rootNode(), rootNodeJson);
             }
 
             instances.push_back(std::move(instance));

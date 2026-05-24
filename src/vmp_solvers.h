@@ -54,8 +54,8 @@ Packing solveByNextFit(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.getGuests();
-    proceedByNextFit(instance.getCapacity(), guests.begin(), guests.end(), hosts);
+    const auto &guests = instance.guests();
+    proceedByNextFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
 }
@@ -100,8 +100,8 @@ Packing solveByFirstFit(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.getGuests();
-    proceedByFirstFit(instance.getCapacity(), guests.begin(), guests.end(), hosts);
+    const auto &guests = instance.guests();
+    proceedByFirstFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
 }
@@ -123,7 +123,7 @@ static void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt gu
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
 
-        double bestRelSize = guest->getUniquePageCount();
+        double bestRelSize = guest->uniquePageCount();
         std::shared_ptr<Host> bestHost = nullptr;
 
         for (const auto &host : hosts) {
@@ -131,7 +131,7 @@ static void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt gu
                 continue;
             }
 
-            const double candidateRelSize = calculateRelSize(*guest, host->getPageFrequencies());
+            const double candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
             if (candidateRelSize <= bestRelSize) {
                 bestHost = host;
                 bestRelSize = candidateRelSize;
@@ -157,8 +157,8 @@ Packing solveByEfficiency(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.getGuests();
-    proceedByEfficiency(instance.getCapacity(), guests.begin(), guests.end(), hosts);
+    const auto &guests = instance.guests();
+    proceedByEfficiency(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
 }
@@ -193,7 +193,7 @@ static void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, Gue
             if (attemptedPlacements[guest].contains(host)) {
                 continue;
             }
-            const auto candidateRelSize = calculateRelSize(*guest, host->getPageFrequencies());
+            const auto candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
             if (candidateRelSize < bestRelSize) {
                 bestHost = host;
                 bestRelSize = candidateRelSize;
@@ -211,8 +211,8 @@ static void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, Gue
         // Remove the worst guest of the container by size-to-relative-size ratio
         while (bestHost->isOverfull()) {
             const auto worstGuest =
-                *std::ranges::min_element(bestHost->getGuests(), {}, [&](const auto &candidate) {
-                    return calculateSizeRelRatio(*candidate, bestHost->getPageFrequencies());
+                *std::ranges::min_element(bestHost->guests(), {}, [&](const auto &candidate) {
+                    return calculateSizeRelRatio(*candidate, bestHost->pageFrequencies());
                 });
 
             unplaced.push_back(worstGuest);
@@ -225,7 +225,7 @@ static void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, Gue
         if (!host->isOverfull()) {
             continue;
         }
-        for (const auto &guest : host->getGuests()) {
+        for (const auto &guest : host->guests()) {
             unplaced.push_back(guest);
         }
         host->clearGuests();
@@ -245,8 +245,8 @@ Packing solveByOverloadAndRemove(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.getGuests();
-    proceedByOverloadAndRemove(instance.getCapacity(), guests.begin(), guests.end(), hosts);
+    const auto &guests = instance.guests();
+    proceedByOverloadAndRemove(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
 }
@@ -261,7 +261,7 @@ template <typename InstanceType>
 Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
-    const auto &guests = instance.getGuests();
+    const auto &guests = instance.guests();
     std::unordered_set unplaced(guests.begin(), guests.end());
 
     while (!unplaced.empty()) {
@@ -272,7 +272,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
         double bestScore = std::numeric_limits<double>::lowest();
 
         for (const auto &guest : unplaced) {
-            if (!largestGuest || guest->getUniquePageCount() > largestGuest->getUniquePageCount()) {
+            if (!largestGuest || guest->uniquePageCount() > largestGuest->uniquePageCount()) {
                 largestGuest = guest;
             }
 
@@ -291,7 +291,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
         }
 
         if (!bestGuest) {
-            bestHost = std::make_shared<Host>(instance.getCapacity());
+            bestHost = std::make_shared<Host>(instance.capacity());
             bestGuest = largestGuest;
             hosts.push_back(bestHost);
         }
@@ -321,13 +321,13 @@ Packing solveByTree(const TreeInstance &instance,
     while (true) {
         const auto lowerBounds = calculateAllSubtreeLowerBounds(workingInstance);
 
-        if (lowerBounds.at(TreeInstance::getRootNode()).count == 1) {
-            const auto &guests = workingInstance.getGuests();
+        if (lowerBounds.at(TreeInstance::rootNode()).count == 1) {
+            const auto &guests = workingInstance.guests();
             if (guests.empty()) {
                 break;
             }
 
-            Host host(workingInstance.getCapacity());
+            Host host(workingInstance.capacity());
             host.addGuests(guests.begin(), guests.end());
             assert(!host.isOverfull());
 
@@ -343,7 +343,7 @@ Packing solveByTree(const TreeInstance &instance,
                 continue;
             }
 
-            const auto &children = workingInstance.getNodeChildren(node);
+            const auto &children = workingInstance.childrenOfNode(node);
 
             if (!std::ranges::all_of(children, [&](const size_t child) {
                     return lowerBounds.at(child).count <= 1;
@@ -359,14 +359,14 @@ Packing solveByTree(const TreeInstance &instance,
 
         assert(minNode != std::numeric_limits<size_t>::max());
 
-        const auto &guestsToPack = workingInstance.getSubtreeGuests(minNode);
-        intermediateSolver(instance.getCapacity(), guestsToPack.begin(), guestsToPack.end(), hosts);
+        const auto &guestsToPack = workingInstance.guestsOfSubtree(minNode);
+        intermediateSolver(instance.capacity(), guestsToPack.begin(), guestsToPack.end(), hosts);
 
-        if (minNode == TreeInstance::getRootNode()) {
+        if (minNode == TreeInstance::rootNode()) {
             break;
         }
 
-        workingInstance.forceDropSubtree(minNode);
+        workingInstance.eraseSubtree(minNode);
     }
 
     return Packing(std::move(hosts));
@@ -457,7 +457,7 @@ Packing solveByMaximiser(
     else {
         // Binary search for the least number of hosts that produces a complete packing
         size_t minHosts = 1;
-        size_t maxHosts = instance.getGuests().size();
+        size_t maxHosts = instance.guests().size();
 
         while (minHosts <= maxHosts) {
             const size_t allowedHostCount = minHosts + (maxHosts - minHosts) / 2;
@@ -467,7 +467,7 @@ Packing solveByMaximiser(
                 candidate.decantGuests();
             }
 
-            if (candidate.getGuestCount() == instance.getGuests().size()) {
+            if (candidate.guestCount() == instance.guests().size()) {
                 bestPacking = std::move(candidate);
                 maxHosts = allowedHostCount - 1;
             }

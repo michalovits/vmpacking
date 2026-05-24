@@ -10,13 +10,13 @@ TEST_CASE("Guest initialisation", "[guest]")
 {
     const Guest g({ 1, 2, 3 });
     CHECK(g.pages == std::unordered_set<int>{ 1, 2, 3 });
-    CHECK(g.getUniquePageCount() == 3);
+    CHECK(g.uniquePageCount() == 3);
 }
 
 TEST_CASE("Empty guest", "[guest]")
 {
     const Guest g({});
-    CHECK(g.getUniquePageCount() == 0);
+    CHECK(g.uniquePageCount() == 0);
     CHECK(g.pages.empty());
 }
 

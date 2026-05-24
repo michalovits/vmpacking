@@ -63,21 +63,23 @@ class Packing
     PackingValidity validateForInstance(const InstanceType &instance) const
     {
         std::unordered_set<std::shared_ptr<const Guest>> placedGuests;
-        for (const auto &host : hosts) {
-            if (host->getGuests().empty()) {
+        for (const auto &host : hosts_) {
+            if (host->guests().empty()) {
                 return PACKING_HOST_EMPTY;
             }
             if (host->isOverfull()) {
                 return PACKING_HOST_OVERFULL;
             }
-            for (const auto &guest : host->getGuests()) {
+            for (const auto &guest : host->guests()) {
                 placedGuests.insert(guest);
             }
         }
 
-        const auto &guests = instance.getGuests();
-        if (!std::ranges::all_of(guests.begin(), guests.end(),
-                                 [&](const auto &guest) { return placedGuests.contains(guest); })) {
+        const auto &guests = instance.guests();
+        const auto isPlaced = [&](const auto &guest) {
+            return placedGuests.contains(guest);
+        };
+        if (!std::ranges::all_of(guests.begin(), guests.end(), isPlaced)) {
             return PACKING_PARTIAL;
         }
 
@@ -88,14 +90,14 @@ class Packing
 
     void addHost(const std::shared_ptr<Host> &host);
 
-    [[nodiscard]] size_t getGuestCount() const;
-    [[nodiscard]] size_t getHostCount() const;
+    [[nodiscard]] size_t guestCount() const;
+    [[nodiscard]] size_t hostCount() const;
 
-    [[nodiscard]] std::vector<std::shared_ptr<Host>> &getHosts();
+    [[nodiscard]] std::vector<std::shared_ptr<Host>> &hosts();
 
   private:
-    std::vector<std::shared_ptr<Host>> hosts;
-    size_t guestCount;
+    std::vector<std::shared_ptr<Host>> hosts_;
+    size_t guestCount_;
 };
 
 }  // namespace vmp

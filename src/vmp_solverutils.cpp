@@ -26,7 +26,7 @@ double calculateRelSize(const Guest &guest, const std::unordered_map<int, int> &
 
 double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, int> &pageFreq)
 {
-    return static_cast<double>(guest.getUniquePageCount()) / calculateRelSize(guest, pageFreq);
+    return static_cast<double>(guest.uniquePageCount()) / calculateRelSize(guest, pageFreq);
 }
 
 double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared_ptr<Host> &host,
@@ -47,7 +47,7 @@ double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared
     }
 
     return static_cast<double>(pagesOnHost + minDifferenceWithOtherHost) /
-           std::sqrt(guest.getUniquePageCount());
+           std::sqrt(guest.uniquePageCount());
 }
 
 std::unordered_map<size_t, TreeLowerBounds>
@@ -67,22 +67,22 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
     std::queue<size_t> topDownNodesToVisit;
 
     // To calculate capacities we must go top-down
-    const size_t root = TreeInstance::getRootNode();
+    const size_t root = TreeInstance::rootNode();
     topDownNodesToVisit.push(root);
-    capacities[root] = instance.getCapacity();
+    capacities[root] = instance.capacity();
 
     while (!topDownNodesToVisit.empty()) {
         const size_t node = topDownNodesToVisit.front();
         topDownNodesToVisit.pop();
 
-        const size_t weight = instance.getNodePages(node).size();
+        const size_t weight = instance.pagesOfNode(node).size();
 
         if (weight > capacities[node]) {
             throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeInstance -- "
                                         "node page count exceeds capacity after ancestors");
         }
 
-        const auto &children = instance.getNodeChildren(node);
+        const auto &children = instance.childrenOfNode(node);
         for (const size_t child : children) {
             capacities[child] = capacities[node] - weight;
             topDownNodesToVisit.push(child);
@@ -97,20 +97,20 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
         const size_t node = bottomUpNodesToVisit.front();
         bottomUpNodesToVisit.pop();
 
-        const size_t parent = instance.getNodeParent(node);
+        const size_t parent = instance.parentOfNode(node);
         if (node != root && --unvisitedChildCounts[parent] == 0) {
             bottomUpNodesToVisit.push(parent);
         }
 
-        const size_t weight = instance.getNodePages(node).size();
+        const size_t weight = instance.pagesOfNode(node).size();
 
-        if (instance.nodeIsLeaf(node)) {
+        if (instance.isLeafNode(node)) {
             res.emplace(node, TreeLowerBounds(weight, 1));
             continue;
         }
 
         size_t childrenTotalSize = 0;
-        for (const size_t child : instance.getNodeChildren(node)) {
+        for (const size_t child : instance.childrenOfNode(node)) {
             childrenTotalSize += res.at(child).size;
         }
 

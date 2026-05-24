@@ -18,7 +18,7 @@
 namespace vmp
 {
 
-static bool next_combination(std::vector<int> &indices, const size_t n)
+static bool nextComb(std::vector<int> &indices, const int n)
 {
     const int k = static_cast<int>(indices.size());
     for (int i = k - 1; i >= 0; --i) {
@@ -88,7 +88,7 @@ findMostEfficientSubset(const std::unordered_map<std::shared_ptr<const Guest>, i
             bestSubset = std::move(subset);
             bestSubsetValue = subsetValue;
         }
-    } while (next_combination(indices, guestCount));
+    } while (nextComb(indices, guestCount));
 
     return bestSubset;
 }
@@ -140,25 +140,25 @@ Packing maximiseByLocalSearch(
     std::vector<std::shared_ptr<Host>> hosts;
     std::unordered_map<std::shared_ptr<const Guest>, int> profits;
 
-    for (const auto &guest : instance.getGuests()) {
+    for (const auto &guest : instance.guests()) {
         profits[guest] = 1;
     }
 
     size_t placed = 0;
-    while (placed < instance.getGuests().size() && hosts.size() < allowedHostCount) {
+    while (placed < instance.guests().size() && hosts.size() < allowedHostCount) {
         Host newHost = oneHostMaximiser(instance, profits);
 
         // Profits are monotonically non-increasing; once the maximiser returns
         // an empty host, no further iteration can make progress
-        if (newHost.getGuests().empty()) {
+        if (newHost.guests().empty()) {
             break;
         }
 
-        for (const auto &guest : newHost.getGuests()) {
+        for (const auto &guest : newHost.guests()) {
             profits[guest] = 0;
         }
 
-        placed += newHost.getGuests().size();
+        placed += newHost.guests().size();
         hosts.emplace_back(std::make_shared<Host>(std::move(newHost)));
     }
 

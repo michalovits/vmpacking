@@ -7,30 +7,30 @@ namespace vmp
 
 GeneralInstance::GeneralInstance(const size_t capacity,
                                  std::vector<std::shared_ptr<const Guest>> guests)
-    : capacity(capacity), guests(std::move(guests))
+    : capacity_(capacity), guests_(std::move(guests))
 {
 }
 
-size_t GeneralInstance::getGuestCount() const
+size_t GeneralInstance::guestCount() const
 {
-    return guests.size();
+    return guests_.size();
 }
 
-const std::vector<std::shared_ptr<const Guest>> &GeneralInstance::getGuests() const
+const std::vector<std::shared_ptr<const Guest>> &GeneralInstance::guests() const
 {
-    return guests;
+    return guests_;
 }
 
-size_t GeneralInstance::getCapacity() const
+size_t GeneralInstance::capacity() const
 {
-    return capacity;
+    return capacity_;
 }
 
 std::ostream &operator<<(std::ostream &os, const GeneralInstance &instance)
 {
-    os << "Instance{ capacity=" << instance.getCapacity() << ", guests=[";
+    os << "Instance{ capacity=" << instance.capacity() << ", guests=[";
 
-    const auto &guests = instance.getGuests();
+    const auto &guests = instance.guests();
     for (size_t i = 0; i < guests.size(); ++i) {
         if (i > 0)
             os << ", ";

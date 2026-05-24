@@ -13,16 +13,15 @@ class GeneralInstance
   public:
     GeneralInstance(size_t capacity, std::vector<std::shared_ptr<const Guest>> guests);
 
-    [[nodiscard]] size_t getGuestCount() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<const Guest>> &guests() const;
+    [[nodiscard]] size_t guestCount() const;
+    [[nodiscard]] size_t capacity() const;
 
     friend std::ostream &operator<<(std::ostream &os, const GeneralInstance &instance);
 
-    [[nodiscard]] const std::vector<std::shared_ptr<const Guest>> &getGuests() const;
-    [[nodiscard]] size_t getCapacity() const;
-
   private:
-    const size_t capacity;
-    const std::vector<std::shared_ptr<const Guest>> guests;
+    const size_t capacity_;
+    const std::vector<std::shared_ptr<const Guest>> guests_;
 };
 
 }  // namespace vmp

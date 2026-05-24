@@ -10,9 +10,9 @@ TEST_CASE("GeneralInstance initialisation", "[generalinstance]")
 {
     const auto instance = makeGeneralInstance(8, { { 1, 2 }, { 3, 4 }, { 5 } });
 
-    CHECK(instance.getCapacity() == 8);
-    CHECK(instance.getGuestCount() == 3);
-    CHECK(instance.getGuests().size() == 3);
+    CHECK(instance.capacity() == 8);
+    CHECK(instance.guestCount() == 3);
+    CHECK(instance.guests().size() == 3);
 }
 
 TEST_CASE("GeneralInstance preserves guest order", "[generalinstance]")
@@ -20,16 +20,16 @@ TEST_CASE("GeneralInstance preserves guest order", "[generalinstance]")
     const auto guests = makeGuests({ { 1 }, { 2 }, { 3 } });
     const GeneralInstance instance(10, guests);
 
-    REQUIRE(instance.getGuests().size() == 3);
-    CHECK(instance.getGuests()[0] == guests[0]);
-    CHECK(instance.getGuests()[1] == guests[1]);
-    CHECK(instance.getGuests()[2] == guests[2]);
+    REQUIRE(instance.guests().size() == 3);
+    CHECK(instance.guests()[0] == guests[0]);
+    CHECK(instance.guests()[1] == guests[1]);
+    CHECK(instance.guests()[2] == guests[2]);
 }
 
 TEST_CASE("Empty GeneralInstance", "[generalinstance]")
 {
     const GeneralInstance instance(5, {});
-    CHECK(instance.getCapacity() == 5);
-    CHECK(instance.getGuestCount() == 0);
-    CHECK(instance.getGuests().empty());
+    CHECK(instance.capacity() == 5);
+    CHECK(instance.guestCount() == 0);
+    CHECK(instance.guests().empty());
 }

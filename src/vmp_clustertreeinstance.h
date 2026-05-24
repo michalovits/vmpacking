@@ -15,32 +15,33 @@ class ClusterTreeInstance
     friend class ClusterTreeInstanceParser;
 
   public:
-    size_t addInner(size_t cluster, std::vector<size_t> parents, std::unordered_set<int> pages);
-    size_t addLeaf(std::vector<size_t> parents, const std::shared_ptr<const Guest> &guest,
-                   std::unordered_set<int> pages);
+    size_t addInnerNode(size_t cluster, std::vector<size_t> parents, std::unordered_set<int> pages);
+    size_t addLeafNode(std::vector<size_t> parents, const std::shared_ptr<const Guest> &guest,
+                       std::unordered_set<int> pages);
 
     size_t createCluster(size_t parent);
 
-    [[nodiscard]] const std::vector<size_t> &getClusterNodes(size_t cluster) const;
-    [[nodiscard]] const std::vector<size_t> &getClusterChildren(size_t cluster) const;
-    [[nodiscard]] size_t getClusterParent(size_t cluster) const;
-    [[nodiscard]] bool clusterIsLeaf(size_t cluster) const;
+    [[nodiscard]] const std::vector<size_t> &clusterNodes(size_t cluster) const;
+    [[nodiscard]] const std::vector<size_t> &childrenOfCluster(size_t cluster) const;
+    [[nodiscard]] size_t parentOfCluster(size_t cluster) const;
+    [[nodiscard]] size_t nodeCountOfCluster(size_t cluster) const;
 
-    [[nodiscard]] const std::vector<size_t> &getNodeParents(size_t node) const;
-    [[nodiscard]] const std::vector<size_t> &getNodeChildren(size_t node) const;
-    [[nodiscard]] const std::unordered_set<int> &getNodePages(size_t node) const;
-    [[nodiscard]] const std::shared_ptr<const Guest> &getNodeGuest(size_t node) const;
-    [[nodiscard]] bool nodeIsLeaf(size_t node) const;
-    [[nodiscard]] size_t getNodeCount() const;
-    [[nodiscard]] size_t nodeCountOf(size_t cluster) const;
+    [[nodiscard]] const std::vector<size_t> &parentsOfNode(size_t node) const;
+    [[nodiscard]] const std::vector<size_t> &childrenOfNode(size_t node) const;
+    [[nodiscard]] const std::unordered_set<int> &pagesOfNode(size_t node) const;
+    [[nodiscard]] const std::shared_ptr<const Guest> &guestOfNode(size_t node) const;
 
-    [[nodiscard]] const std::vector<size_t> &getLeafNodes() const;
-    [[nodiscard]] size_t getClusterCount() const;
-    [[nodiscard]] static size_t getRootCluster();
+    [[nodiscard]] size_t nodeCount() const;
+    [[nodiscard]] const std::vector<size_t> &leafNodes() const;
 
-    [[nodiscard]] std::vector<std::shared_ptr<const Guest>> getGuests() const;
-    [[nodiscard]] size_t getCapacity() const;
+    [[nodiscard]] size_t clusterCount() const;
+    [[nodiscard]] static size_t rootCluster();
 
+    [[nodiscard]] bool isLeafCluster(size_t cluster) const;
+    [[nodiscard]] bool isLeafNode(size_t node) const;
+
+    [[nodiscard]] std::vector<std::shared_ptr<const Guest>> guests() const;
+    [[nodiscard]] size_t capacity() const;
     explicit ClusterTreeInstance(size_t capacity);
 
     static constexpr size_t ROOT_CLUSTER = 0;
@@ -81,14 +82,13 @@ class ClusterTreeInstance
         Cluster() : parent(ROOT_CLUSTER), nodes({}) {}
     };
 
-    [[nodiscard]] bool checkNodesAreInCluster(const std::vector<size_t> &nodes,
-                                              size_t cluster) const;
+    [[nodiscard]] bool allInCluster(const std::vector<size_t> &nodes, size_t cluster) const;
 
-    std::vector<Node> nodes;
-    std::vector<size_t> leaves;
-    std::vector<Cluster> clusters;
+    std::vector<Node> nodes_;
+    std::vector<size_t> leaves_;
+    std::vector<Cluster> clusters_;
 
-    const size_t capacity;
+    const size_t capacity_;
 };
 
 }  // namespace vmp

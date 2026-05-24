@@ -54,21 +54,21 @@ vmp::TreeInstance mkTree()
 
     // TreeInstance only validates tree structure, not VM Packing invariants.
     // E.g. a page appearing in both an ancestor and descendant will not be detected.
-    const size_t n = tree.addInner(vmp::TreeInstance::getRootNode(), {});
-    const size_t left = tree.addInner(n, { 1 });
-    tree.addLeaf(left, guest1, {});  // the "1" page is removed now
-    tree.addLeaf(left, guest3, {});
+    const size_t n = tree.addInnerNode(vmp::TreeInstance::rootNode(), {});
+    const size_t left = tree.addInnerNode(n, { 1 });
+    tree.addLeafNode(left, guest1, {});  // the "1" page is removed now
+    tree.addLeafNode(left, guest3, {});
 
-    const size_t right = tree.addInner(n, { 3, 5 });
-    tree.addLeaf(right, guest2, { 2, 8 });
-    tree.addLeaf(right, guest4, {});
+    const size_t right = tree.addInnerNode(n, { 3, 5 });
+    tree.addLeafNode(right, guest2, { 2, 8 });
+    tree.addLeafNode(right, guest4, {});
 
-    tree.addLeaf(n, guest5, { 6, 8 });
+    tree.addLeafNode(n, guest5, { 6, 8 });
 
     return tree;
 }
 
 void printResult(const vmp::Packing &packing)
 {
-    std::cout << packing.getHostCount() << std::endl;
+    std::cout << packing.hostCount() << std::endl;
 }

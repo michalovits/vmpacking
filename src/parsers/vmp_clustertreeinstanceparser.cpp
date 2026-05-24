@@ -37,7 +37,7 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
     std::unordered_map<size_t, size_t> &fromJsonNode, const bool skipRoot) const
 {
     const size_t cluster =
-        skipRoot ? ClusterTreeInstance::getRootCluster() : instance.createCluster(parentCluster);
+        skipRoot ? ClusterTreeInstance::rootCluster() : instance.createCluster(parentCluster);
 
     if (clusterJson.contains(nodesName)) {
         for (const auto &nodeJson : clusterJson[nodesName]) {
@@ -51,8 +51,9 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
 
             const size_t node =
                 nodeJson.contains(guestPagesName)
-                    ? instance.addLeaf(std::move(parents), parseGuest(nodeJson), std::move(pages))
-                    : instance.addInner(cluster, std::move(parents), std::move(pages));
+                    ? instance.addLeafNode(std::move(parents), parseGuest(nodeJson),
+                                           std::move(pages))
+                    : instance.addInnerNode(cluster, std::move(parents), std::move(pages));
 
             fromJsonNode[jsonNodeId] = node;
         }
@@ -96,7 +97,7 @@ std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t ma
             std::unordered_map<size_t, size_t> jsonToNodeIds;
 
             ClusterTreeInstance instance(capacity);
-            parseClusterSubtree(instance, ClusterTreeInstance::getRootCluster(), instanceJson,
+            parseClusterSubtree(instance, ClusterTreeInstance::rootCluster(), instanceJson,
                                 jsonToNodeIds, true);
 
             instances.push_back(std::move(instance));
