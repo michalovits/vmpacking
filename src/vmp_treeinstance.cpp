@@ -15,7 +15,6 @@ TreeInstance::TreeInstance(const size_t capacity, std::unordered_set<int> rootPa
 
 size_t TreeInstance::addInnerNode(const size_t parent, std::unordered_set<int> pages)
 {
-    assert(parent < nodes_.size());
     assert(nodes_[parent].has_value());
 
     const size_t n = nodes_.size();
@@ -30,7 +29,6 @@ size_t TreeInstance::addInnerNode(const size_t parent, std::unordered_set<int> p
 size_t TreeInstance::addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,
                                  std::unordered_set<int> pages)
 {
-    assert(parent < nodes_.size());
     assert(nodes_[parent].has_value());
 
     const size_t n = nodes_.size();
@@ -75,17 +73,13 @@ std::shared_ptr<const Guest> TreeInstance::guestOfNode(const size_t node) const
 const std::unordered_set<std::shared_ptr<const Guest>> &
 TreeInstance::guestsOfSubtree(const size_t root) const
 {
-    assert(root < nodes_.size());
     assert(nodes_[root].has_value());
-
     return nodes_[root]->guests;
 }
 
 bool TreeInstance::isLeafNode(const size_t node) const
 {
-    assert(node < nodes_.size());
     assert(nodes_[node].has_value());
-
     return nodes_[node]->children.empty();
 }
 
@@ -102,7 +96,6 @@ size_t TreeInstance::capacity() const
 const std::unordered_set<std::shared_ptr<const Guest>> &TreeInstance::guests() const
 {
     assert(nodes_[ROOT_NODE].has_value());
-
     return nodes_[ROOT_NODE]->guests;
 }
 
@@ -113,7 +106,6 @@ const std::vector<size_t> &TreeInstance::leafNodes() const
 
 void TreeInstance::eraseSubtree(const size_t root)
 {
-    assert(root < nodes_.size());
     assert(nodes_[root].has_value());
 
     // Clean up references to these guests by just iterating over all nodes

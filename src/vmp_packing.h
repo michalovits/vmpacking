@@ -63,6 +63,7 @@ class Packing
     PackingValidity validateForInstance(const InstanceType &instance) const
     {
         std::unordered_set<std::shared_ptr<const Guest>> placedGuests;
+
         for (const auto &host : hosts_) {
             if (host->guests().empty()) {
                 return PACKING_HOST_EMPTY;
@@ -79,7 +80,7 @@ class Packing
         const auto isPlaced = [&](const auto &guest) {
             return placedGuests.contains(guest);
         };
-        if (!std::ranges::all_of(guests.begin(), guests.end(), isPlaced)) {
+        if (!std::ranges::all_of(guests, isPlaced)) {
             return PACKING_PARTIAL;
         }
 

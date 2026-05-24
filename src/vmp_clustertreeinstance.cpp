@@ -49,23 +49,21 @@ size_t ClusterTreeInstance::addLeafNode(std::vector<size_t> parents,
     const size_t parentCluster = nodes_[parents[0]].cluster;
     assert(allInCluster(parents, parentCluster));
 
-    const size_t newNode = nodes_.size();
-    const size_t newCluster = createCluster(parentCluster);
+    const size_t node = nodes_.size();
+    const size_t cluster = createCluster(parentCluster);
 
+    // Link the new node to the parents
     for (const size_t parent : parents) {
-        nodes_[parent].children.push_back(newNode);
-
-        if (std::ranges::find(clusters_[parentCluster].children, newCluster) ==
-            clusters_[parentCluster].children.end()) {
-            clusters_[nodes_[parent].cluster].children.push_back(newCluster);
-        }
+        nodes_[parent].children.push_back(node);
     }
 
-    nodes_.emplace_back(std::move(parents), std::move(pages), guest, newCluster);
-    clusters_[newCluster].nodes.push_back(newNode);
-    this->leaves_.push_back(newNode);
+    // Bookkeeping for the leaf cache
+    this->leaves_.push_back(node);
+    clusters_[cluster].nodes.push_back(node);
 
-    return newNode;
+    nodes_.emplace_back(std::move(parents), std::move(pages), guest, cluster);
+
+    return node;
 }
 
 size_t ClusterTreeInstance::createCluster(const size_t parent)
