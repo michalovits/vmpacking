@@ -25,8 +25,6 @@ class ClusterTreeInstanceParser
     [[nodiscard]]
     std::vector<ClusterTreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
-    ~ClusterTreeInstanceParser() = default;
-
   private:
     const std::string directory;
 

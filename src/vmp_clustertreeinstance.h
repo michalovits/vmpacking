@@ -21,7 +21,7 @@ class ClusterTreeInstance
 
     size_t createCluster(size_t parent);
 
-    [[nodiscard]] const std::vector<size_t> &clusterNodes(size_t cluster) const;
+    [[nodiscard]] const std::vector<size_t> &nodesOfCluster(size_t cluster) const;
     [[nodiscard]] const std::vector<size_t> &childrenOfCluster(size_t cluster) const;
     [[nodiscard]] size_t parentOfCluster(size_t cluster) const;
     [[nodiscard]] size_t nodeCountOfCluster(size_t cluster) const;

@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(vmp)
+project(vmp CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -26,17 +28,8 @@ FetchContent_Declare(
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(nlohmann_json)
 
-file(GLOB_RECURSE LIB_SOURCES "src/**.cpp")
-
-add_library(vmp STATIC ${LIB_SOURCES})
-
-target_include_directories(vmp SYSTEM PUBLIC
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/parsers"
-)
-
+add_library(vmp STATIC)
 target_compile_options(vmp PRIVATE -Wall -Wextra)
-
 target_link_libraries(vmp PUBLIC nlohmann_json::nlohmann_json)
 
 add_subdirectory(src)

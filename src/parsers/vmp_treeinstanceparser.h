@@ -22,8 +22,6 @@ class TreeInstanceParser
     [[nodiscard]]
     std::vector<TreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
-    ~TreeInstanceParser() = default;
-
   private:
     const std::string directory;
 

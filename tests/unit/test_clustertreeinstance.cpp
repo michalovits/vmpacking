@@ -13,7 +13,7 @@ TEST_CASE("ClusterTreeInstance initialisation", "[clustertreeinstance]")
     CHECK(tree.nodeCount() == 0);
     CHECK(tree.clusterCount() == 1);
     CHECK(tree.leafNodes().empty());
-    CHECK(tree.clusterNodes(ClusterTreeInstance::rootCluster()).empty());
+    CHECK(tree.nodesOfCluster(ClusterTreeInstance::rootCluster()).empty());
 }
 
 TEST_CASE("ClusterTreeInstance::addInner", "[clustertreeinstance]")
@@ -25,7 +25,7 @@ TEST_CASE("ClusterTreeInstance::addInner", "[clustertreeinstance]")
 
     CHECK(tree.nodeCount() == 1);
     CHECK(tree.nodeCountOfCluster(root) == 1);
-    CHECK(tree.clusterNodes(root) == std::vector{ node });
+    CHECK(tree.nodesOfCluster(root) == std::vector{ node });
     CHECK(tree.pagesOfNode(node) == std::unordered_set{ 1, 2 });
     CHECK(tree.parentsOfNode(node).empty());
     CHECK(tree.childrenOfNode(node).empty());
@@ -50,7 +50,7 @@ TEST_CASE("ClusterTreeInstance::addLeaf", "[clustertreeinstance]")
     REQUIRE(tree.clusterCount() == 2);
     const size_t leafCluster = 1;
     CHECK(tree.parentOfCluster(leafCluster) == root);
-    CHECK(tree.clusterNodes(leafCluster) == std::vector{ leaf });
+    CHECK(tree.nodesOfCluster(leafCluster) == std::vector{ leaf });
     CHECK(tree.isLeafCluster(leafCluster));
 }
 
@@ -67,7 +67,7 @@ TEST_CASE("ClusterTreeInstance::addInner multi-parent", "[clustertreeinstance]")
     CHECK(tree.parentsOfNode(child) == std::vector{ parentA, parentB });
     CHECK(tree.childrenOfNode(parentA) == std::vector{ child });
     CHECK(tree.childrenOfNode(parentB) == std::vector{ child });
-    CHECK(tree.clusterNodes(childCluster) == std::vector{ child });
+    CHECK(tree.nodesOfCluster(childCluster) == std::vector{ child });
     CHECK(tree.pagesOfNode(child) == std::unordered_set{ 3 });
     CHECK_FALSE(tree.isLeafNode(child));
 }

@@ -31,8 +31,8 @@ namespace vmp
  * @param hosts the partial hosts vector to use
  */
 template <SharedPtrIterator<const Guest> GuestIt>
-static void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                             std::vector<std::shared_ptr<Host>> &hosts)
+void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
+                      std::vector<std::shared_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
@@ -71,8 +71,8 @@ Packing solveByNextFit(const InstanceType &instance)
  * @param hosts the partial hosts vector to use
  */
 template <SharedPtrIterator<const Guest> GuestIt>
-static void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                              std::vector<std::shared_ptr<Host>> &hosts)
+void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
+                       std::vector<std::shared_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
@@ -117,8 +117,8 @@ Packing solveByFirstFit(const InstanceType &instance)
  * @param hosts the partial hosts vector to use
  */
 template <SharedPtrIterator<const Guest> GuestIt>
-static void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                                std::vector<std::shared_ptr<Host>> &hosts)
+void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
+                         std::vector<std::shared_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
@@ -174,8 +174,8 @@ Packing solveByEfficiency(const InstanceType &instance)
  * @param hosts the partial hosts vector to use
  */
 template <SharedPtrIterator<const Guest> GuestIt>
-static void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                                       std::vector<std::shared_ptr<Host>> &hosts)
+void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
+                                std::vector<std::shared_ptr<Host>> &hosts)
 {
     std::deque unplaced(guestsBegin, guestsEnd);
     std::unordered_map<std::shared_ptr<const Guest>, std::unordered_set<std::shared_ptr<Host>>>

@@ -5,93 +5,15 @@
 #include <vmp_commontypes.h>
 #include <vmp_packing.h>
 
-#include <algorithm>
 #include <functional>
 #include <memory>
-#include <numeric>
 #include <optional>
-#include <ranges>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace vmp
 {
-
-static bool nextComb(std::vector<int> &indices, const int n)
-{
-    const int k = static_cast<int>(indices.size());
-    for (int i = k - 1; i >= 0; --i) {
-        if (indices[i] >= n - k + i) {
-            continue;
-        }
-        ++indices[i];
-        for (int j = i + 1; j < k; ++j) {
-            indices[j] = indices[j - 1] + 1;
-        }
-        return true;
-    }
-    return false;
-}
-
-/**
- * Finds the most efficient subset of guests to place on a host given a
- * mandatory subset size, accounting for the reward and page sharing within
- * the subset and with the host.
- *
- * @param unplaced the pool of guests to sample
- * @param host the host to place the guests on
- * @param subsetSize the number of guests to place
- * @return the most efficient subset of guests, or `std::nullopt` if no viable subset exists
- */
-static std::optional<std::vector<std::pair<std::shared_ptr<const Guest>, int>>>
-findMostEfficientSubset(const std::unordered_map<std::shared_ptr<const Guest>, int> &unplaced,
-                        const Host &host, int subsetSize)
-{
-    std::vector<std::pair<std::shared_ptr<const Guest>, int>> guests(unplaced.begin(),
-                                                                     unplaced.end());
-    const int guestCount = static_cast<int>(guests.size());
-    subsetSize = std::min(guestCount, subsetSize);
-
-    std::optional<std::vector<std::pair<std::shared_ptr<const Guest>, int>>> bestSubset;
-    double bestSubsetValue = 0.0;
-
-    std::vector<int> indices(subsetSize);
-    std::iota(indices.begin(), indices.end(), 0);
-
-    do {
-        std::vector<std::pair<std::shared_ptr<const Guest>, int>> subset;
-        subset.reserve(subsetSize);
-        for (const int index : indices) {
-            subset.emplace_back(guests[index]);
-        }
-
-        std::vector<std::shared_ptr<const Guest>> candidateView;
-        candidateView.reserve(subsetSize);
-        for (const auto &guest : subset | std::views::keys) {
-            candidateView.push_back(guest);
-        }
-
-        if (!host.accommodatesGuests(candidateView.begin(), candidateView.end())) {
-            continue;
-        }
-
-        const double rewardSum =
-            std::accumulate(subset.begin(), subset.end(), 0.0,
-                            [](double acc, const auto &guest) { return acc + guest.second; });
-
-        const size_t pageCount =
-            host.countPagesWithGuests(candidateView.begin(), candidateView.end());
-        const double subsetValue = rewardSum / static_cast<double>(1 + pageCount);
-
-        if (subsetValue > bestSubsetValue) {
-            bestSubset = std::move(subset);
-            bestSubsetValue = subsetValue;
-        }
-    } while (nextComb(indices, guestCount));
-
-    return bestSubset;
-}
 
 /**
  * Places guests on a single host by always picking the next most valuable set

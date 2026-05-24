@@ -44,7 +44,7 @@ class Packing
   public:
     explicit Packing(std::vector<std::shared_ptr<Host>> hosts);
 
-    Packing(Packing &other) noexcept = default;
+    Packing(const Packing &other) noexcept = default;
     Packing(Packing &&other) noexcept = default;
 
     Packing &operator=(Packing &&other) noexcept = default;

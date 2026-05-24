@@ -97,7 +97,7 @@ size_t ClusterTreeInstance::capacity() const
     return capacity_;
 }
 
-const std::vector<size_t> &ClusterTreeInstance::clusterNodes(const size_t cluster) const
+const std::vector<size_t> &ClusterTreeInstance::nodesOfCluster(const size_t cluster) const
 {
     return clusters_[cluster].nodes;
 }

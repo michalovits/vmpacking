@@ -2,12 +2,83 @@
 
 #include <vmp_clustertreeinstance.h>
 
+#include <algorithm>
 #include <cassert>
+#include <numeric>
 #include <queue>
+#include <ranges>
 #include <unordered_set>
 
 namespace vmp
 {
+
+static bool nextComb(std::vector<int> &indices, const int n)
+{
+    const int k = static_cast<int>(indices.size());
+    for (int i = k - 1; i >= 0; --i) {
+        if (indices[i] >= n - k + i) {
+            continue;
+        }
+        ++indices[i];
+        for (int j = i + 1; j < k; ++j) {
+            indices[j] = indices[j - 1] + 1;
+        }
+        return true;
+    }
+    return false;
+}
+
+/// Find the most efficient subset of guests to place on a host given a
+/// mandatory subset size, accounting for the reward and page sharing within
+/// the subset and with the host. Return nullopt if impossible.
+static std::optional<std::vector<std::pair<std::shared_ptr<const Guest>, int>>>
+findMostEfficientSubset(const std::unordered_map<std::shared_ptr<const Guest>, int> &unplaced,
+                        const Host &host, int subsetSize)
+{
+    std::vector<std::pair<std::shared_ptr<const Guest>, int>> guests(unplaced.begin(),
+                                                                     unplaced.end());
+    const int guestCount = static_cast<int>(guests.size());
+    subsetSize = std::min(guestCount, subsetSize);
+
+    std::optional<std::vector<std::pair<std::shared_ptr<const Guest>, int>>> bestSubset;
+    double bestSubsetValue = 0.0;
+
+    std::vector<int> indices(subsetSize);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    do {
+        std::vector<std::pair<std::shared_ptr<const Guest>, int>> subset;
+        subset.reserve(subsetSize);
+        for (const int index : indices) {
+            subset.emplace_back(guests[index]);
+        }
+
+        std::vector<std::shared_ptr<const Guest>> candidateView;
+        candidateView.reserve(subsetSize);
+        for (const auto &guest : subset | std::views::keys) {
+            candidateView.push_back(guest);
+        }
+
+        if (!host.accommodatesGuests(candidateView.begin(), candidateView.end())) {
+            continue;
+        }
+
+        const double rewardSum =
+            std::accumulate(subset.begin(), subset.end(), 0.0,
+                            [](double acc, const auto &guest) { return acc + guest.second; });
+
+        const size_t pageCount =
+            host.countPagesWithGuests(candidateView.begin(), candidateView.end());
+        const double subsetValue = rewardSum / static_cast<double>(1 + pageCount);
+
+        if (subsetValue > bestSubsetValue) {
+            bestSubset = std::move(subset);
+            bestSubsetValue = subsetValue;
+        }
+    } while (nextComb(indices, guestCount));
+
+    return bestSubset;
+}
 
 Host maximiseOneHostBySubsetEfficiency(
     const GeneralInstance &instance,
@@ -70,7 +141,7 @@ struct GuestSelection
     // TODO avoid copying guests, instead reference other entries in the cost table and backtrack
     std::vector<std::shared_ptr<const Guest>> guests;
 
-    GuestSelection() : pageCount(std::numeric_limits<int>::max()) {}
+    GuestSelection() : pageCount(std::numeric_limits<size_t>::max()) {}
     GuestSelection(const size_t pageCount, std::vector<std::shared_ptr<const Guest>> guests)
         : pageCount(pageCount), guests(std::move(guests))
     {
@@ -79,7 +150,7 @@ struct GuestSelection
     void setFromSelection(const std::vector<size_t> &selection,
                           const std::unordered_set<int> &pages, const ClusterTreeInstance &instance)
     {
-        pageCount = static_cast<int>(pages.size());
+        pageCount = pages.size();
         guests.clear();
         guests.reserve(selection.size());
 
@@ -99,12 +170,6 @@ struct GuestSelection
         guests.insert(guests.end(), a.guests.begin(), a.guests.end());
         guests.insert(guests.end(), b.guests.begin(), b.guests.end());
     }
-
-    GuestSelection(const GuestSelection &) = default;
-    GuestSelection(GuestSelection &&) noexcept = default;
-    GuestSelection &operator=(const GuestSelection &) = default;
-    GuestSelection &operator=(GuestSelection &&) noexcept = default;
-    ~GuestSelection() = default;
 };
 
 static std::pair<std::vector<size_t>, std::unordered_set<int>>
@@ -153,7 +218,7 @@ findLowestCostAccessibleSelection(const auto &costs, const size_t cluster,
                                   const size_t accessibleMask, const size_t profitTarget,
                                   const ClusterTreeInstance &instance)
 {
-    const std::vector<size_t> &nodes = instance.clusterNodes(cluster);
+    const std::vector<size_t> &nodes = instance.nodesOfCluster(cluster);
     assert(nodes.size() < 64);
 
     std::optional<GuestSelection> lowestCost;
@@ -231,7 +296,7 @@ Host maximiseOneHostByClusterTree(
             clustersToVisit.push(parent);
         }
 
-        const std::vector<size_t> &curNodes = instance.clusterNodes(cluster);
+        const std::vector<size_t> &curNodes = instance.nodesOfCluster(cluster);
         const auto &curChildren = instance.childrenOfCluster(cluster);
 
         if (instance.isLeafCluster(cluster)) {
@@ -284,7 +349,7 @@ Host maximiseOneHostByClusterTree(
                     // children first, then generate *its* subsets instead
 
                     const size_t newChild = curChildren[j - 1];
-                    const std::vector<size_t> &newChildNodes = instance.clusterNodes(newChild);
+                    const std::vector<size_t> &newChildNodes = instance.nodesOfCluster(newChild);
                     const size_t accessibleChildrenMask =
                         makeAccessibleChildrenMask(newChildNodes, curSelection, instance);
 
@@ -300,8 +365,8 @@ Host maximiseOneHostByClusterTree(
                         const GuestSelection &prevCost =
                             costs.at({ cluster, curMask, j - 1, profitTarget - profitComplement });
 
-                        if (bestChildCost.pageCount == std::numeric_limits<int>::max() ||
-                            prevCost.pageCount == std::numeric_limits<int>::max()) {
+                        if (bestChildCost.pageCount == std::numeric_limits<size_t>::max() ||
+                            prevCost.pageCount == std::numeric_limits<size_t>::max()) {
                             continue;
                         }
 

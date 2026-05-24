@@ -20,8 +20,6 @@ class GeneralInstanceParser
     [[nodiscard]] std::vector<GeneralInstance>
     load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
-    ~GeneralInstanceParser() = default;
-
   private:
     const std::string directory;
 
