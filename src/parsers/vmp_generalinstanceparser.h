@@ -3,7 +3,8 @@
 
 #include <vmp_generalinstance.h>
 
-#include <json.hpp>
+#include <limits>
+#include <nlohmann/json.hpp>
 #include <set>
 #include <vector>
 
@@ -16,7 +17,8 @@ class GeneralInstanceParser
     explicit GeneralInstanceParser(std::string directory, std::string capacityName = "capacity",
                                    std::string guestsName = "guests");
 
-    [[nodiscard]] std::vector<GeneralInstance> load(int maxInstances = -1);
+    [[nodiscard]] std::vector<GeneralInstance>
+    load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
     ~GeneralInstanceParser() = default;
 
@@ -27,7 +29,7 @@ class GeneralInstanceParser
     const std::string guestsName;
 
     std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, int> processedInstances;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances;
 };
 
 }  // namespace vmp

@@ -3,8 +3,11 @@
 
 #include <vmp_host.h>
 
+#include <algorithm>
+#include <memory>
 #include <ostream>
 #include <unordered_set>
+#include <vector>
 
 namespace vmp
 {

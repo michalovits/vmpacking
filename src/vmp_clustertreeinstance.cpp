@@ -1,5 +1,6 @@
 #include <vmp_clustertreeinstance.h>
 
+#include <algorithm>
 #include <cassert>
 
 namespace vmp
@@ -22,7 +23,7 @@ size_t ClusterTreeInstance::addInner(const size_t cluster, std::vector<size_t> p
                                      std::unordered_set<int> pages)
 {
     assert(checkNodesAreInCluster(parents, clusters[cluster].parent));
-    for (const size_t node : parents) {
+    for ([[maybe_unused]] const size_t node : parents) {
         assert(!nodeIsLeaf(node));
     }
 

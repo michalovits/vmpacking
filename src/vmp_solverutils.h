@@ -1,8 +1,13 @@
 #ifndef VMP_SOLVERUTILS_H
 #define VMP_SOLVERUTILS_H
 
+#include <algorithm>
+#include <iterator>
+#include <memory>
 #include <queue>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include <vmp_commontypes.h>
 #include <vmp_guest.h>
 #include <vmp_host.h>

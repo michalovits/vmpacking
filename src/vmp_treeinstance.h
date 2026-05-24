@@ -3,6 +3,8 @@
 
 #include <vmp_guest.h>
 
+#include <memory>
+#include <optional>
 #include <unordered_set>
 #include <vector>
 
@@ -24,18 +26,23 @@ class TreeInstance
     [[nodiscard]] std::shared_ptr<const Guest> getNodeGuest(size_t node) const;
     [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &
     getSubtreeGuests(size_t root) const;
-    [[nodiscard]] bool nodeIsLeaf(size_t node) const;
     [[nodiscard]] size_t getNodeCount() const;
     [[nodiscard]] size_t getCapacity() const;
     [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &getGuests() const;
     [[nodiscard]] const std::vector<size_t> &getLeaves() const;
-    void removeSubtree(size_t root);
+
+    [[nodiscard]] bool nodeIsLeaf(size_t node) const;
+
+    /// Removes the subtree rooted at `root`.
+    /// Removes references to the subtree's guests from every ancestor's guest cache.
+    ///
+    /// Dangerous: does not rebuild the tree. Some inner nodes may now be redundant
+    /// (contain pages that belong to only one child).
+    void forceDropSubtree(size_t root);
 
     static size_t getRootNode();
 
     TreeInstance(size_t capacity, std::unordered_set<int> rootPages);
-    TreeInstance(size_t capacity, std::unordered_set<int> rootPages,
-                 const std::shared_ptr<const Guest> &rootGuest);
 
   private:
     struct Node
@@ -47,7 +54,7 @@ class TreeInstance
         // If it's a leaf, the pages unique to the node
         std::unordered_set<int> pages;
 
-        // This is a useful and reasonably expensive cache to keep at each node
+        // Cache the guests of the subtree rooted here
         std::unordered_set<std::shared_ptr<const Guest>> guests;
 
         Node(const size_t parent, std::unordered_set<int> pages,
@@ -55,8 +62,6 @@ class TreeInstance
             : parent(parent), pages(std::move(pages)), guests(std::move(guests))
         {
         }
-
-        Node() : parent(0) {};
     };
 
     std::vector<std::optional<Node>> nodes;

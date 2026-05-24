@@ -130,7 +130,7 @@ static size_t makeAccessibleChildrenMask(const std::vector<size_t> &children,
                                          const ClusterTreeInstance &instance)
 {
     size_t accessibleChildrenMask = 0;
-    for (int i = 0; i < children.size(); ++i) {
+    for (size_t i = 0; i < children.size(); ++i) {
         const auto &trueParents = instance.getNodeParents(children[i]);
 
         for (const size_t parentCandidate : allowedParents) {

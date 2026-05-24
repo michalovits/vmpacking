@@ -4,7 +4,18 @@
 #include <vmp_packing.h>
 #include <vmp_solverutils.h>
 
+#include <algorithm>
 #include <cassert>
+#include <deque>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace vmp
 {
@@ -355,7 +366,7 @@ Packing solveByTree(const TreeInstance &instance,
             break;
         }
 
-        workingInstance.removeSubtree(minNode);
+        workingInstance.forceDropSubtree(minNode);
     }
 
     return Packing(std::move(hosts));

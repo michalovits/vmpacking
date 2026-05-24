@@ -3,6 +3,8 @@
 
 #include <vmp_commontypes.h>
 
+#include <iosfwd>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vmp_guest.h>

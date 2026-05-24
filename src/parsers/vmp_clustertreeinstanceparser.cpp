@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <fstream>
-#include <json.hpp>
 
 using json = nlohmann::json;
 
@@ -64,12 +63,11 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
     }
 }
 
-std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const int maxInstances)
+std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
     std::vector<ClusterTreeInstance> instances;
-    instances.reserve(maxInstances);
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -90,7 +88,7 @@ std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const int maxIn
 
         const auto rootNodesJson = json::parse(file);
 
-        for (int i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
+        for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &instanceJson = rootNodesJson[i];
             assert(instanceJson.contains(capacityName));
 

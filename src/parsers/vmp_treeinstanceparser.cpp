@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <fstream>
-#include <json.hpp>
 
 using json = nlohmann::json;
 
@@ -46,12 +45,11 @@ void TreeInstanceParser::parseChildren(TreeInstance &instance, const size_t pare
     }
 };
 
-std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
+std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
     std::vector<TreeInstance> instances;
-    instances.reserve(maxInstances);
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -72,7 +70,7 @@ std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
 
         const auto rootNodesJson = json::parse(file);
 
-        for (int i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
+        for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &rootNodeJson = rootNodesJson[i];
             assert(rootNodeJson.contains(capacityName));
 
@@ -80,9 +78,11 @@ std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
             const auto rootGuest = parseGuest(rootNodeJson);
             auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeInstance instance = rootGuest == nullptr
-                                        ? TreeInstance(capacity, std::move(rootPages))
-                                        : TreeInstance(capacity, std::move(rootPages), rootGuest);
+            TreeInstance instance(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
+                                                                 : std::move(rootPages));
+            if (rootGuest != nullptr) {
+                instance.addLeaf(TreeInstance::getRootNode(), rootGuest, std::move(rootPages));
+            }
 
             if (rootNodeJson.contains(childrenName)) {
                 parseChildren(instance, TreeInstance::getRootNode(), rootNodeJson);

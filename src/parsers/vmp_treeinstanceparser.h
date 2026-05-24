@@ -3,7 +3,8 @@
 
 #include <vmp_treeinstance.h>
 
-#include <json.hpp>
+#include <limits>
+#include <nlohmann/json.hpp>
 #include <set>
 #include <vector>
 
@@ -19,7 +20,7 @@ class TreeInstanceParser
                                 std::string childrenName = "children");
 
     [[nodiscard]]
-    std::vector<TreeInstance> load(int maxInstances = -1);
+    std::vector<TreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
     ~TreeInstanceParser() = default;
 
@@ -32,7 +33,7 @@ class TreeInstanceParser
     const std::string childrenName;
 
     std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, int> processedInstances;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances;
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 
