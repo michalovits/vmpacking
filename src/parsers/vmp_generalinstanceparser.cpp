@@ -24,7 +24,7 @@ makeInstances(const std::vector<int> &capacityData,
     assert(capacityData.size() == guestData.size());
 
     std::vector<GeneralInstance> instances;
-    for (int i = 0; i < capacityData.size(); ++i) {
+    for (size_t i = 0; i < capacityData.size(); ++i) {
         std::vector<std::shared_ptr<const Guest>> guests;
         for (const auto &guestPages : guestData[i]) {
             guests.push_back(
@@ -36,17 +36,13 @@ makeInstances(const std::vector<int> &capacityData,
     return instances;
 }
 
-std::vector<GeneralInstance> GeneralInstanceParser::load(const int maxInstances)
+std::vector<GeneralInstance> GeneralInstanceParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
     std::vector<GeneralInstance> instances;
     std::vector<int> capacityData;
     std::vector<std::vector<std::vector<int>>> guestData;
-
-    instances.reserve(maxInstances);
-    capacityData.reserve(maxInstances);
-    guestData.reserve(maxInstances);
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -67,7 +63,7 @@ std::vector<GeneralInstance> GeneralInstanceParser::load(const int maxInstances)
 
         const auto rootNodesJson = json::parse(file);
 
-        for (int i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
+        for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &instanceJson = rootNodesJson[i];
             assert(instanceJson.contains(capacityName));
             assert(instanceJson.contains(guestsName));

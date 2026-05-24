@@ -3,6 +3,7 @@
 
 #include <vmp_clustertreeinstance.h>
 
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <set>
 #include <vector>
@@ -22,7 +23,7 @@ class ClusterTreeInstanceParser
                                        std::string clusterChildrenName = "cluster_children");
 
     [[nodiscard]]
-    std::vector<ClusterTreeInstance> load(int maxInstances = -1);
+    std::vector<ClusterTreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
     ~ClusterTreeInstanceParser() = default;
 
@@ -38,7 +39,7 @@ class ClusterTreeInstanceParser
     const std::string clusterChildrenName;
 
     std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, int> processedInstances;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances;
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 

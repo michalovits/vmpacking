@@ -46,7 +46,7 @@ TEST_CASE("e2e: general instances", "[e2e]")
     SKIP_IF_MISSING(dir);
 
     auto parser = vmp::GeneralInstanceParser(dir);
-    const auto instances = parser.load(1024);
+    const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
     for (size_t i = 0; i < instances.size(); ++i) {
@@ -67,7 +67,7 @@ TEST_CASE("e2e: tree instances", "[e2e]")
     SKIP_IF_MISSING(dir);
 
     auto parser = vmp::TreeInstanceParser(dir);
-    const auto instances = parser.load(1024);
+    const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
     const auto solveByTreeFirstFit = [](const vmp::TreeInstance &inst) {
@@ -98,7 +98,7 @@ TEST_CASE("e2e: cluster-tree instances", "[e2e]")
     SKIP_IF_MISSING(dir);
 
     auto parser = vmp::ClusterTreeInstanceParser(dir);
-    const auto instances = parser.load(1024);
+    const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
     for (size_t i = 0; i < instances.size(); ++i) {

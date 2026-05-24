@@ -35,7 +35,7 @@ target_include_directories(vmp SYSTEM PUBLIC
         "${CMAKE_SOURCE_DIR}/src/parsers"
 )
 
-target_compile_options(vmp PRIVATE -Wall)
+target_compile_options(vmp PRIVATE -Wall -Wextra)
 
 target_link_libraries(vmp PUBLIC nlohmann_json::nlohmann_json)
 

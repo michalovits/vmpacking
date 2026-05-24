@@ -45,12 +45,11 @@ void TreeInstanceParser::parseChildren(TreeInstance &instance, const size_t pare
     }
 };
 
-std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
+std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
     std::vector<TreeInstance> instances;
-    instances.reserve(maxInstances);
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -71,7 +70,7 @@ std::vector<TreeInstance> TreeInstanceParser::load(const int maxInstances)
 
         const auto rootNodesJson = json::parse(file);
 
-        for (int i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
+        for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &rootNodeJson = rootNodesJson[i];
             assert(rootNodeJson.contains(capacityName));
 

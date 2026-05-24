@@ -97,7 +97,7 @@ void TreeInstance::forceDropSubtree(const size_t root)
 {
     // Clean up references to these guests
     const auto &guestsToRemove = nodes[root]->guests;
-    for (int node = 0; node < nodes.size(); ++node) {
+    for (size_t node = 0; node < nodes.size(); ++node) {
         if (node == root || !nodes[node].has_value()) {
             continue;
         }
