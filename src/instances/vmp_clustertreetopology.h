@@ -13,7 +13,7 @@ namespace vmp
 
 class ClusterTreeTopology
 {
-    friend class ClusterTreeInstanceBuilder;
+    friend class ClusterTreeBuilder;
 
   public:
     [[nodiscard]] const std::vector<size_t> &nodesOfCluster(size_t cluster) const;

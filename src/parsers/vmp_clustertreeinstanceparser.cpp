@@ -33,7 +33,7 @@ std::shared_ptr<Guest> ClusterTreeInstanceParser::parseGuest(const json &nodeJso
 }
 
 void ClusterTreeInstanceParser::parseClusterSubtree(
-    ClusterTreeInstanceBuilder &builder, const size_t parentCluster, const json &clusterJson,
+    ClusterTreeBuilder &builder, const size_t parentCluster, const json &clusterJson,
     std::unordered_map<size_t, size_t> &fromJsonNode, const bool skipRoot) const
 {
     // Link directly to the sentinel or create the root
@@ -96,7 +96,7 @@ std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t ma
             const size_t capacity = instanceJson[capacityName].get<size_t>();
             std::unordered_map<size_t, size_t> jsonToNodeIds;
 
-            ClusterTreeInstanceBuilder builder(capacity);
+            ClusterTreeBuilder builder(capacity);
             parseClusterSubtree(builder, builder.rootCluster(), instanceJson, jsonToNodeIds, true);
 
             instances.push_back(std::move(builder).build());

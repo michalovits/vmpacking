@@ -1,4 +1,4 @@
-#include <vmp_treeinstancebuilder.h>
+#include <vmp_treebuilder.h>
 
 #include <cassert>
 #include <utility>
@@ -6,12 +6,12 @@
 namespace vmp
 {
 
-TreeInstanceBuilder::TreeInstanceBuilder(const size_t capacity, std::unordered_set<int> rootPages)
+TreeBuilder::TreeBuilder(const size_t capacity, std::unordered_set<int> rootPages)
     : capacity_(capacity), topology_(std::move(rootPages))
 {
 }
 
-size_t TreeInstanceBuilder::addInnerNode(const size_t parent, std::unordered_set<int> pages)
+size_t TreeBuilder::addInnerNode(const size_t parent, std::unordered_set<int> pages)
 {
     auto &nodes = topology_.nodes_;
     assert(nodes[parent].has_value());
@@ -23,8 +23,8 @@ size_t TreeInstanceBuilder::addInnerNode(const size_t parent, std::unordered_set
     return node;
 }
 
-size_t TreeInstanceBuilder::addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,
-                                        std::unordered_set<int> pages)
+size_t TreeBuilder::addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,
+                                std::unordered_set<int> pages)
 {
     auto &nodes = topology_.nodes_;
     assert(nodes[parent].has_value());
@@ -44,12 +44,12 @@ size_t TreeInstanceBuilder::addLeafNode(size_t parent, const std::shared_ptr<con
     return node;
 }
 
-TreeInstance TreeInstanceBuilder::build() &&
+TreeInstance TreeBuilder::build() &&
 {
     return TreeInstance(capacity_, std::move(topology_));
 }
 
-size_t TreeInstanceBuilder::rootNode()
+size_t TreeBuilder::rootNode()
 {
     return TreeTopology::rootNode();
 }

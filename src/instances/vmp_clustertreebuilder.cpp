@@ -1,4 +1,4 @@
-#include <vmp_clustertreeinstancebuilder.h>
+#include <vmp_clustertreebuilder.h>
 
 #include <algorithm>
 #include <cassert>
@@ -7,12 +7,9 @@
 namespace vmp
 {
 
-ClusterTreeInstanceBuilder::ClusterTreeInstanceBuilder(const size_t capacity) : capacity_(capacity)
-{
-}
+ClusterTreeBuilder::ClusterTreeBuilder(const size_t capacity) : capacity_(capacity) {}
 
-bool ClusterTreeInstanceBuilder::allInCluster(const std::vector<size_t> &nodes,
-                                              const size_t cluster) const
+bool ClusterTreeBuilder::allInCluster(const std::vector<size_t> &nodes, const size_t cluster) const
 {
     const auto belongs = [&](const size_t node) {
         return topology_.nodes_[node].cluster == cluster;
@@ -20,8 +17,8 @@ bool ClusterTreeInstanceBuilder::allInCluster(const std::vector<size_t> &nodes,
     return std::ranges::all_of(nodes, belongs);
 }
 
-size_t ClusterTreeInstanceBuilder::addInnerNode(const size_t cluster, std::vector<size_t> parents,
-                                                std::unordered_set<int> pages)
+size_t ClusterTreeBuilder::addInnerNode(const size_t cluster, std::vector<size_t> parents,
+                                        std::unordered_set<int> pages)
 {
     auto &nodes = topology_.nodes_;
     const size_t parentCluster = topology_.clusters_[cluster].parent;
@@ -43,9 +40,9 @@ size_t ClusterTreeInstanceBuilder::addInnerNode(const size_t cluster, std::vecto
     return node;
 }
 
-size_t ClusterTreeInstanceBuilder::addLeafNode(std::vector<size_t> parents,
-                                               const std::shared_ptr<const Guest> &guest,
-                                               std::unordered_set<int> pages)
+size_t ClusterTreeBuilder::addLeafNode(std::vector<size_t> parents,
+                                       const std::shared_ptr<const Guest> &guest,
+                                       std::unordered_set<int> pages)
 {
     assert(!parents.empty());
 
@@ -71,7 +68,7 @@ size_t ClusterTreeInstanceBuilder::addLeafNode(std::vector<size_t> parents,
     return node;
 }
 
-size_t ClusterTreeInstanceBuilder::createCluster(const size_t parent)
+size_t ClusterTreeBuilder::createCluster(const size_t parent)
 {
     auto &clusters = topology_.clusters_;
     const size_t cluster = clusters.size();
@@ -82,12 +79,12 @@ size_t ClusterTreeInstanceBuilder::createCluster(const size_t parent)
     return cluster;
 }
 
-ClusterTreeInstance ClusterTreeInstanceBuilder::build() &&
+ClusterTreeInstance ClusterTreeBuilder::build() &&
 {
     return ClusterTreeInstance(capacity_, std::move(topology_));
 }
 
-size_t ClusterTreeInstanceBuilder::rootCluster()
+size_t ClusterTreeBuilder::rootCluster()
 {
     return ClusterTreeTopology::rootCluster();
 }

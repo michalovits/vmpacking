@@ -11,10 +11,10 @@
 namespace vmp
 {
 
-class ClusterTreeInstanceBuilder
+class ClusterTreeBuilder
 {
   public:
-    explicit ClusterTreeInstanceBuilder(size_t capacity);
+    explicit ClusterTreeBuilder(size_t capacity);
 
     size_t addInnerNode(size_t cluster, std::vector<size_t> parents, std::unordered_set<int> pages);
     size_t addLeafNode(std::vector<size_t> parents, const std::shared_ptr<const Guest> &guest,

@@ -10,10 +10,10 @@
 namespace vmp
 {
 
-class TreeInstanceBuilder
+class TreeBuilder
 {
   public:
-    TreeInstanceBuilder(size_t capacity, std::unordered_set<int> rootPages);
+    TreeBuilder(size_t capacity, std::unordered_set<int> rootPages);
 
     size_t addInnerNode(size_t parent, std::unordered_set<int> pages);
     size_t addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,

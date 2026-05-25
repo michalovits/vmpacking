@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <instance_builders.h>
-#include <vmp_treeinstancebuilder.h>
+#include <vmp_treebuilder.h>
 
 using namespace vmp;
 using vmp::testing::makeGuest;
 
 TEST_CASE("Empty TreeInstance initialisation", "[treeinstance]")
 {
-    const auto instance = TreeInstanceBuilder(8, { 7, 8 }).build();
+    const auto instance = TreeBuilder(8, { 7, 8 }).build();
     const auto &tree = instance.topology();
 
     CHECK(instance.capacity() == 8);
@@ -19,9 +19,9 @@ TEST_CASE("Empty TreeInstance initialisation", "[treeinstance]")
     CHECK(tree.isLeafNode(tree.rootNode()));
 }
 
-TEST_CASE("TreeInstanceBuilder::addInner", "[treeinstance]")
+TEST_CASE("TreeBuilder::addInner", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
 
     const size_t inner = builder.addInnerNode(root, { 2, 3 });
@@ -37,9 +37,9 @@ TEST_CASE("TreeInstanceBuilder::addInner", "[treeinstance]")
     CHECK_FALSE(tree.isLeafNode(root));
 }
 
-TEST_CASE("TreeInstanceBuilder::addLeaf", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
 
@@ -57,9 +57,9 @@ TEST_CASE("TreeInstanceBuilder::addLeaf", "[treeinstance]")
     CHECK(tree.guests().contains(g));
 }
 
-TEST_CASE("TreeInstanceBuilder::addInner nested", "[treeinstance]")
+TEST_CASE("TreeBuilder::addInner nested", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
 
     const size_t innerA = builder.addInnerNode(root, { 2 });
@@ -76,7 +76,7 @@ TEST_CASE("TreeInstanceBuilder::addInner nested", "[treeinstance]")
     CHECK(tree.isLeafNode(innerB));
 }
 
-TEST_CASE("TreeInstanceBuilder::addLeaf bookkeeping at ancestors", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf bookkeeping at ancestors", "[treeinstance]")
 {
     //   -- root --
     //   |        |
@@ -85,7 +85,7 @@ TEST_CASE("TreeInstanceBuilder::addLeaf bookkeeping at ancestors", "[treeinstanc
     // innerB
     //   |
     //  leaf
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t innerA = builder.addInnerNode(root, { 2 });
@@ -105,9 +105,9 @@ TEST_CASE("TreeInstanceBuilder::addLeaf bookkeeping at ancestors", "[treeinstanc
     CHECK_FALSE(tree.guestsOfSubtree(innerC).contains(g));
 }
 
-TEST_CASE("TreeInstanceBuilder::addLeaf accumulates sibling guests at the parent", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf accumulates sibling guests at the parent", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
@@ -135,7 +135,7 @@ TEST_CASE("TreeTopology::eraseSubtree drops node and guests", "[treeinstance]")
     // innerA   innerB
     //   |        |
     // leafA    leafB
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t innerA = builder.addInnerNode(root, { 2 });
@@ -161,7 +161,7 @@ TEST_CASE("TreeTopology::eraseSubtree drops node and guests", "[treeinstance]")
 
 TEST_CASE("TreeTopology::eraseSubtree of a leaf", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
@@ -192,7 +192,7 @@ TEST_CASE("TreeTopology::eraseSubtree deep", "[treeinstance]")
     //   inner2
     //     |
     //   leaf (g)
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner1 = builder.addInnerNode(root, { 2 });
@@ -213,7 +213,7 @@ TEST_CASE("TreeTopology::eraseSubtree deep", "[treeinstance]")
 
 TEST_CASE("TreeTopology::eraseSubtree repeated", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t innerA = builder.addInnerNode(root, { 2 });
@@ -238,7 +238,7 @@ TEST_CASE("TreeTopology::eraseSubtree repeated", "[treeinstance]")
 TEST_CASE("TreeTopology::eraseSubtree preserves page sharing", "[treeinstance]")
 {
     // after dropping leafA, the walk up from leafB should reconstruct its page set correctly
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
@@ -268,7 +268,7 @@ TEST_CASE("TreeTopology::eraseSubtree preserves page sharing", "[treeinstance]")
 
 TEST_CASE("TreeTopology::eraseSubtree does not affect copies", "[treeinstance]")
 {
-    TreeInstanceBuilder builder(8, { 1 });
+    TreeBuilder builder(8, { 1 });
 
     const size_t inner = builder.addInnerNode(builder.rootNode(), { 2 });
     const auto g = makeGuest({ 3 });

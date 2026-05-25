@@ -14,7 +14,7 @@ namespace vmp
 
 class TreeTopology
 {
-    friend class TreeInstanceBuilder;
+    friend class TreeBuilder;
 
   public:
     [[nodiscard]] const std::vector<size_t> &childrenOfNode(size_t node) const;

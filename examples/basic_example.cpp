@@ -1,6 +1,6 @@
 #include <vmp_generaltopology.h>
 #include <vmp_solvers.h>
-#include <vmp_treeinstancebuilder.h>
+#include <vmp_treebuilder.h>
 
 #include <iostream>
 
@@ -50,7 +50,7 @@ vmp::GeneralInstance makeGeneralInstance()
 
 vmp::TreeInstance makeTreeInstance()
 {
-    auto builder = vmp::TreeInstanceBuilder(capacity, {});
+    auto builder = vmp::TreeBuilder(capacity, {});
 
     // The topology only validates tree structure, not VM Packing invariants.
     // E.g. a page appearing in both an ancestor and descendant will not be detected.

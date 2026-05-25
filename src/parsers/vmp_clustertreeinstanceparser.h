@@ -1,7 +1,7 @@
 #ifndef VMP_CLUSTERTREEINSTANCELOADER_H
 #define VMP_CLUSTERTREEINSTANCELOADER_H
 
-#include <vmp_clustertreeinstancebuilder.h>
+#include <vmp_clustertreebuilder.h>
 
 #include <limits>
 #include <nlohmann/json.hpp>
@@ -41,7 +41,7 @@ class ClusterTreeInstanceParser
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 
-    void parseClusterSubtree(ClusterTreeInstanceBuilder &builder, size_t parentCluster,
+    void parseClusterSubtree(ClusterTreeBuilder &builder, size_t parentCluster,
                              const nlohmann::json &clusterJson,
                              std::unordered_map<size_t, size_t> &fromJsonNode,
                              bool skipRoot = false) const;

@@ -28,7 +28,7 @@ std::shared_ptr<Guest> TreeInstanceParser::parseGuest(const json &nodeJson) cons
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void TreeInstanceParser::parseChildren(TreeInstanceBuilder &builder, const size_t parent,
+void TreeInstanceParser::parseChildren(TreeBuilder &builder, const size_t parent,
                                        const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
@@ -78,8 +78,8 @@ std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
             const auto rootGuest = parseGuest(rootNodeJson);
             auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeInstanceBuilder builder(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
-                                                                       : std::move(rootPages));
+            TreeBuilder builder(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
+                                                               : std::move(rootPages));
             if (rootGuest != nullptr) {
                 builder.addLeafNode(builder.rootNode(), rootGuest, std::move(rootPages));
             }

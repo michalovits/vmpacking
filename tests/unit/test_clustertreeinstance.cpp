@@ -2,14 +2,14 @@
 #include <catch2/matchers/catch_matchers_vector.hpp>
 
 #include <instance_builders.h>
-#include <vmp_clustertreeinstancebuilder.h>
+#include <vmp_clustertreebuilder.h>
 
 using namespace vmp;
 using vmp::testing::makeGuest;
 
 TEST_CASE("ClusterTreeInstance initialisation", "[clustertreeinstance]")
 {
-    const auto instance = ClusterTreeInstanceBuilder(8).build();
+    const auto instance = ClusterTreeBuilder(8).build();
     const auto &tree = instance.topology();
 
     CHECK(instance.capacity() == 8);
@@ -20,9 +20,9 @@ TEST_CASE("ClusterTreeInstance initialisation", "[clustertreeinstance]")
     CHECK(tree.nodesOfCluster(tree.rootCluster()).empty());
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addInner", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t node = builder.addInnerNode(root, {}, { 1, 2 });
@@ -39,9 +39,9 @@ TEST_CASE("ClusterTreeInstanceBuilder::addInner", "[clustertreeinstance]")
     CHECK_FALSE(tree.isLeafNode(node));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addLeaf", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addLeaf", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parentNode = builder.addInnerNode(root, {}, { 1 });
 
@@ -64,9 +64,9 @@ TEST_CASE("ClusterTreeInstanceBuilder::addLeaf", "[clustertreeinstance]")
     CHECK(tree.isLeafCluster(leafCluster));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addInner multi-parent", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner multi-parent", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parentA = builder.addInnerNode(root, {}, { 1 });
     const size_t parentB = builder.addInnerNode(root, {}, { 2 });
@@ -85,9 +85,9 @@ TEST_CASE("ClusterTreeInstanceBuilder::addInner multi-parent", "[clustertreeinst
     CHECK_FALSE(tree.isLeafNode(child));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addLeaf multi-parent", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addLeaf multi-parent", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parentA = builder.addInnerNode(root, {}, { 1 });
     const size_t parentB = builder.addInnerNode(root, {}, { 2 });
@@ -111,10 +111,10 @@ TEST_CASE("ClusterTreeInstanceBuilder::addLeaf multi-parent", "[clustertreeinsta
     CHECK(tree.isLeafCluster(leafCluster));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addLeaf gives each sibling leaf its own cluster",
+TEST_CASE("ClusterTreeBuilder::addLeaf gives each sibling leaf its own cluster",
           "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parent = builder.addInnerNode(root, {}, { 1 });
 
@@ -136,9 +136,9 @@ TEST_CASE("ClusterTreeInstanceBuilder::addLeaf gives each sibling leaf its own c
     CHECK(tree.isLeafNode(leaf2));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::addInner deep", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner deep", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
     const size_t rootCluster = builder.rootCluster();
     const size_t innerA = builder.addInnerNode(rootCluster, {}, { 1 });
 
@@ -165,7 +165,7 @@ TEST_CASE("ClusterTreeInstanceBuilder::addInner deep", "[clustertreeinstance]")
 
 TEST_CASE("ClusterTreeTopology::guests", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t parent = builder.addInnerNode(root, {}, { 1 });
@@ -183,9 +183,9 @@ TEST_CASE("ClusterTreeTopology::guests", "[clustertreeinstance]")
     CHECK_THAT(tree.guests(), Catch::Matchers::VectorContains(g2));
 }
 
-TEST_CASE("ClusterTreeInstanceBuilder::createCluster", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::createCluster", "[clustertreeinstance]")
 {
-    ClusterTreeInstanceBuilder builder(8);
+    ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t child = builder.createCluster(root);
