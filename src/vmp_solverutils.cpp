@@ -50,8 +50,8 @@ double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared
            std::sqrt(guest.uniquePageCount());
 }
 
-std::unordered_map<size_t, TreeLowerBounds>
-calculateAllSubtreeLowerBounds(const TreeInstance &instance)
+std::unordered_map<size_t, TreeLowerBounds> calculateAllSubtreeLowerBounds(const TreeTopology &tree,
+                                                                           const size_t capacity)
 {
     std::unordered_map<size_t, TreeLowerBounds> res;
 
@@ -67,22 +67,23 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
     std::queue<size_t> topDownNodesToVisit;
 
     // To calculate capacities we must go top-down
-    const size_t root = TreeInstance::rootNode();
+    const size_t root = tree.rootNode();
+
     topDownNodesToVisit.push(root);
-    capacities[root] = instance.capacity();
+    capacities[root] = capacity;
 
     while (!topDownNodesToVisit.empty()) {
         const size_t node = topDownNodesToVisit.front();
         topDownNodesToVisit.pop();
 
-        const size_t weight = instance.pagesOfNode(node).size();
+        const size_t weight = tree.pagesOfNode(node).size();
 
         if (weight > capacities[node]) {
-            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeInstance -- "
+            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeTopology -- "
                                         "node page count exceeds capacity after ancestors");
         }
 
-        const auto &children = instance.childrenOfNode(node);
+        const auto &children = tree.childrenOfNode(node);
         for (const size_t child : children) {
             capacities[child] = capacities[node] - weight;
             topDownNodesToVisit.push(child);
@@ -97,25 +98,25 @@ calculateAllSubtreeLowerBounds(const TreeInstance &instance)
         const size_t node = bottomUpNodesToVisit.front();
         bottomUpNodesToVisit.pop();
 
-        const size_t parent = instance.parentOfNode(node);
+        const size_t parent = tree.parentOfNode(node);
         if (node != root && --unvisitedChildCounts[parent] == 0) {
             bottomUpNodesToVisit.push(parent);
         }
 
-        const size_t weight = instance.pagesOfNode(node).size();
+        const size_t weight = tree.pagesOfNode(node).size();
 
-        if (instance.isLeafNode(node)) {
+        if (tree.isLeafNode(node)) {
             res.emplace(node, TreeLowerBounds(weight, 1));
             continue;
         }
 
         size_t childrenTotalSize = 0;
-        for (const size_t child : instance.childrenOfNode(node)) {
+        for (const size_t child : tree.childrenOfNode(node)) {
             childrenTotalSize += res.at(child).size;
         }
 
         if (weight >= capacities[node]) {
-            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeInstance -- "
+            throw std::invalid_argument("calculateAllSubtreeLowerBounds: malformed TreeTopology -- "
                                         "internal node leaves no capacity for its subtree");
         }
 

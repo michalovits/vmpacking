@@ -1,7 +1,7 @@
 #ifndef VMP_TESTS_INSTANCE_BUILDERS_H
 #define VMP_TESTS_INSTANCE_BUILDERS_H
 
-#include <vmp_generalinstance.h>
+#include <vmp_generaltopology.h>
 #include <vmp_guest.h>
 
 #include <initializer_list>

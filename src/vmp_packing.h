@@ -58,9 +58,8 @@ class Packing
      * @param instance the instance against which to validate
      * @return
      */
-    template <typename InstanceType>
-        requires Instance<InstanceType>
-    PackingValidity validateForInstance(const InstanceType &instance) const
+    template <typename InstanceT>
+    PackingValidity validateForInstance(const InstanceT &instance) const
     {
         std::unordered_set<std::shared_ptr<const Guest>> placedGuests;
 

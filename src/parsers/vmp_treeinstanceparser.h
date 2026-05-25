@@ -1,7 +1,7 @@
 #ifndef VMP_TREEINSTANCELOADER_H
 #define VMP_TREEINSTANCELOADER_H
 
-#include <vmp_treeinstance.h>
+#include <vmp_treeinstancebuilder.h>
 
 #include <limits>
 #include <nlohmann/json.hpp>
@@ -35,7 +35,8 @@ class TreeInstanceParser
 
     [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 
-    void parseChildren(TreeInstance &instance, size_t parent, const nlohmann::json &nodeJson) const;
+    void parseChildren(TreeInstanceBuilder &builder, size_t parent,
+                       const nlohmann::json &nodeJson) const;
 };
 
 }  // namespace vmp

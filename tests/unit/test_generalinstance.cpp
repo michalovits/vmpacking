@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <instance_builders.h>
-#include <vmp_generalinstance.h>
+#include <vmp_generaltopology.h>
 
 using namespace vmp;
 using vmp::testing::makeGeneralInstance;
@@ -28,7 +28,7 @@ TEST_CASE("GeneralInstance preserves guest order", "[generalinstance]")
 
 TEST_CASE("Empty GeneralInstance", "[generalinstance]")
 {
-    const GeneralInstance instance(5, {});
+    const auto instance = makeGeneralInstance(5, {});
     CHECK(instance.capacity() == 5);
     CHECK(instance.guestCount() == 0);
     CHECK(instance.guests().empty());

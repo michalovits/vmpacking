@@ -1,6 +1,6 @@
 #include <vmp_maximisers.h>
 
-#include <vmp_clustertreeinstance.h>
+#include <vmp_clustertreetopology.h>
 
 #include <algorithm>
 #include <cassert>
@@ -148,15 +148,15 @@ struct GuestSelection
     }
 
     void setFromSelection(const std::vector<size_t> &selection,
-                          const std::unordered_set<int> &pages, const ClusterTreeInstance &instance)
+                          const std::unordered_set<int> &pages, const ClusterTreeTopology &tree)
     {
         pageCount = pages.size();
         guests.clear();
         guests.reserve(selection.size());
 
         for (const size_t selected : selection) {
-            if (instance.isLeafNode(selected)) {
-                guests.push_back(instance.guestOfNode(selected));
+            if (tree.isLeafNode(selected)) {
+                guests.push_back(tree.guestOfNode(selected));
             }
         }
     }
@@ -173,7 +173,7 @@ struct GuestSelection
 };
 
 static std::pair<std::vector<size_t>, std::unordered_set<int>>
-selectNodesByMask(const ClusterTreeInstance &instance, const std::vector<size_t> &pool,
+selectNodesByMask(const ClusterTreeTopology &tree, const std::vector<size_t> &pool,
                   const uint64_t mask)
 {
     std::unordered_set<int> pages;
@@ -181,7 +181,7 @@ selectNodesByMask(const ClusterTreeInstance &instance, const std::vector<size_t>
 
     for (uint64_t i = 0; i < pool.size(); ++i) {
         if (mask & 1ULL << i) {
-            const auto &nodePages = instance.pagesOfNode(pool[i]);
+            const auto &nodePages = tree.pagesOfNode(pool[i]);
             pages.insert(nodePages.begin(), nodePages.end());
             selection.push_back(pool[i]);
         }
@@ -192,11 +192,11 @@ selectNodesByMask(const ClusterTreeInstance &instance, const std::vector<size_t>
 
 static size_t makeAccessibleChildrenMask(const std::vector<size_t> &children,
                                          const std::vector<size_t> &allowedParents,
-                                         const ClusterTreeInstance &instance)
+                                         const ClusterTreeTopology &tree)
 {
     size_t accessibleChildrenMask = 0;
     for (size_t i = 0; i < children.size(); ++i) {
-        const auto &trueParents = instance.parentsOfNode(children[i]);
+        const auto &trueParents = tree.parentsOfNode(children[i]);
 
         for (const size_t parentCandidate : allowedParents) {
             if (std::ranges::find(trueParents, parentCandidate) != trueParents.end()) {
@@ -216,9 +216,9 @@ static bool checkAllAccessible(const size_t childrenMask, const size_t accessibl
 static std::optional<GuestSelection>
 findLowestCostAccessibleSelection(const auto &costs, const size_t cluster,
                                   const size_t accessibleMask, const size_t profitTarget,
-                                  const ClusterTreeInstance &instance)
+                                  const ClusterTreeTopology &tree)
 {
-    const std::vector<size_t> &nodes = instance.nodesOfCluster(cluster);
+    const std::vector<size_t> &nodes = tree.nodesOfCluster(cluster);
     assert(nodes.size() < 64);
 
     std::optional<GuestSelection> lowestCost;
@@ -228,7 +228,7 @@ findLowestCostAccessibleSelection(const auto &costs, const size_t cluster,
             continue;
         }
 
-        const size_t degree = instance.childrenOfCluster(cluster).size();
+        const size_t degree = tree.childrenOfCluster(cluster).size();
         // Assume we have already processed the child nodes by topological sort
         const auto &cost = costs.at({ cluster, selectionMask, degree, profitTarget });
 
@@ -240,17 +240,18 @@ findLowestCostAccessibleSelection(const auto &costs, const size_t cluster,
 }
 
 static std::optional<GuestSelection>
-findMostProfitableScenarioAtRoot(const auto &costs, const ClusterTreeInstance &instance)
+findMostProfitableScenarioAtRoot(const auto &costs, const ClusterTreeTopology &tree,
+                                 const size_t capacity)
 {
-    const size_t root = ClusterTreeInstance::rootCluster();
-    const size_t rootDegree = instance.childrenOfCluster(root).size();
+    const size_t root = tree.rootCluster();
+    const size_t rootDegree = tree.childrenOfCluster(root).size();
 
     size_t bestProfit = 0;
     std::optional<GuestSelection> bestProfitCost;
 
     for (auto &[key, value] : costs) {
         if (key.cluster == root && key.childCount == rootDegree && key.profitTarget > bestProfit &&
-            value.pageCount <= instance.capacity()) {
+            value.pageCount <= capacity) {
             bestProfit = key.profitTarget;
             bestProfitCost = std::move(value);
         }
@@ -263,6 +264,9 @@ Host maximiseOneHostByClusterTree(
     const ClusterTreeInstance &instance,
     const std::unordered_map<std::shared_ptr<const Guest>, int> &profits)
 {
+    const auto &tree = instance.topology();
+    const size_t capacity = instance.capacity();
+
     std::unordered_map<ProfitOption, GuestSelection,
                        decltype([](const ProfitOption &k) { return k.hash(); })>
         costs;
@@ -277,8 +281,8 @@ Host maximiseOneHostByClusterTree(
     std::unordered_map<size_t, size_t> unvisitedClusterChildCount;
     std::queue<size_t> clustersToVisit;
 
-    for (size_t cluster = 0; cluster < instance.clusterCount(); ++cluster) {
-        const size_t childCount = instance.childrenOfCluster(cluster).size();
+    for (size_t cluster = 0; cluster < tree.clusterCount(); ++cluster) {
+        const size_t childCount = tree.childrenOfCluster(cluster).size();
 
         if ((unvisitedClusterChildCount[cluster] = childCount) == 0) {
             clustersToVisit.push(cluster);
@@ -291,16 +295,16 @@ Host maximiseOneHostByClusterTree(
         clustersToVisit.pop();
 
         // Decrement the unvisited child count of each parent
-        const size_t parent = instance.parentOfCluster(cluster);
+        const size_t parent = tree.parentOfCluster(cluster);
         if (--unvisitedClusterChildCount[parent] == 0) {
             clustersToVisit.push(parent);
         }
 
-        const std::vector<size_t> &curNodes = instance.nodesOfCluster(cluster);
-        const auto &curChildren = instance.childrenOfCluster(cluster);
+        const std::vector<size_t> &curNodes = tree.nodesOfCluster(cluster);
+        const auto &curChildren = tree.childrenOfCluster(cluster);
 
-        if (instance.isLeafCluster(cluster)) {
-            const auto &guest = instance.guestOfNode(curNodes.front());
+        if (tree.isLeafCluster(cluster)) {
+            const auto &guest = tree.guestOfNode(curNodes.front());
             profitUpperBounds[cluster] = profits.at(guest);
         }
         else {
@@ -313,12 +317,12 @@ Host maximiseOneHostByClusterTree(
         // Begin by considering every one of 2^(node count) choices of nodes from this cluster
         for (uint64_t curMask = 0; curMask < 1ULL << curNodes.size(); ++curMask) {
             const auto [curSelection, curSelectionPages] =
-                selectNodesByMask(instance, curNodes, curMask);
+                selectNodesByMask(tree, curNodes, curMask);
 
             size_t profitMade = 0;
             for (const size_t node : curSelection) {
-                if (instance.isLeafNode(node)) {
-                    profitMade += profits.at(instance.guestOfNode(node));
+                if (tree.isLeafNode(node)) {
+                    profitMade += profits.at(tree.guestOfNode(node));
                 }
             }
 
@@ -327,11 +331,11 @@ Host maximiseOneHostByClusterTree(
                 // Initialise:
                 // cost[n,s,0,p] = if (sum profit in s) >= p then |union pages in s| else +inf
                 ProfitOption curKey{ cluster, curMask, 0, profitTarget };
-                if (curSelectionPages.size() > instance.capacity() || profitMade < profitTarget) {
+                if (curSelectionPages.size() > capacity || profitMade < profitTarget) {
                     costs[curKey] = GuestSelection();
                 }
                 else {
-                    costs[curKey].setFromSelection(curSelection, curSelectionPages, instance);
+                    costs[curKey].setFromSelection(curSelection, curSelectionPages, tree);
                 }
 
                 // Allow taking from the first j children at a time
@@ -349,20 +353,20 @@ Host maximiseOneHostByClusterTree(
                     // children first, then generate *its* subsets instead
 
                     const size_t newChild = curChildren[j - 1];
-                    const std::vector<size_t> &newChildNodes = instance.nodesOfCluster(newChild);
+                    const std::vector<size_t> &newChildNodes = tree.nodesOfCluster(newChild);
                     const size_t accessibleChildrenMask =
-                        makeAccessibleChildrenMask(newChildNodes, curSelection, instance);
+                        makeAccessibleChildrenMask(newChildNodes, curSelection, tree);
 
                     // Try to make `profitComplement` profit from the newly considered child
                     // cluster
                     for (size_t profitComplement = 0;
                          profitComplement <= std::min(profitTarget, profitUpperBounds.at(newChild));
                          ++profitComplement) {
-                        const GuestSelection bestChildCost =
+                        const auto bestChildCost =
                             findLowestCostAccessibleSelection(
-                                costs, newChild, accessibleChildrenMask, profitComplement, instance)
+                                costs, newChild, accessibleChildrenMask, profitComplement, tree)
                                 .value_or(GuestSelection());
-                        const GuestSelection &prevCost =
+                        const auto &prevCost =
                             costs.at({ cluster, curMask, j - 1, profitTarget - profitComplement });
 
                         if (bestChildCost.pageCount == std::numeric_limits<size_t>::max() ||
@@ -373,7 +377,7 @@ Host maximiseOneHostByClusterTree(
                         const size_t candidatePageCount =
                             prevCost.pageCount + bestChildCost.pageCount;
 
-                        if (candidatePageCount <= instance.capacity() &&
+                        if (candidatePageCount <= capacity &&
                             candidatePageCount < costs.at(curKey).pageCount) {
                             costs[curKey].setFromCombinationOfDisjoint(prevCost, bestChildCost);
                         }
@@ -383,9 +387,9 @@ Host maximiseOneHostByClusterTree(
         }
     }
 
-    Host host(instance.capacity());
+    Host host(capacity);
 
-    const auto bestCost = findMostProfitableScenarioAtRoot(costs, instance);
+    const auto bestCost = findMostProfitableScenarioAtRoot(costs, tree, capacity);
     if (!bestCost.has_value()) {
         return host;
     }

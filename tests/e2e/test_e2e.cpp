@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <vmp_clustertreeinstance.h>
 #include <vmp_clustertreeinstanceparser.h>
-#include <vmp_generalinstance.h>
+#include <vmp_clustertreetopology.h>
 #include <vmp_generalinstanceparser.h>
+#include <vmp_generaltopology.h>
 #include <vmp_packing.h>
 #include <vmp_solvers.h>
-#include <vmp_treeinstance.h>
 #include <vmp_treeinstanceparser.h>
+#include <vmp_treetopology.h>
 
 #include <filesystem>
 

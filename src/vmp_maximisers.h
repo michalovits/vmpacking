@@ -1,13 +1,12 @@
 #ifndef VMP_MAXIMISERS_H
 #define VMP_MAXIMISERS_H
 
-#include <vmp_clustertreeinstance.h>
-#include <vmp_commontypes.h>
+#include <vmp_clustertreetopology.h>
+#include <vmp_generaltopology.h>
 #include <vmp_packing.h>
 
 #include <functional>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -51,11 +50,10 @@ Host maximiseOneHostByClusterTree(
  * @param oneHostMaximiser the single-host maximiser to use
  * @return a packing with at most `allowedHostCount` hosts
  */
-template <typename InstanceType>
-    requires Instance<InstanceType>
+template <typename InstanceT>
 Packing maximiseByLocalSearch(
-    const InstanceType &instance, const size_t allowedHostCount,
-    const std::function<Host(const InstanceType &,
+    const InstanceT &instance, const size_t allowedHostCount,
+    const std::function<Host(const InstanceT &,
                              const std::unordered_map<std::shared_ptr<const Guest>, int> &)>
         &oneHostMaximiser)
 {

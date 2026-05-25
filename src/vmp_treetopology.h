@@ -1,7 +1,8 @@
-#ifndef VMP_TREEINSTANCE_H
-#define VMP_TREEINSTANCE_H
+#ifndef VMP_TREETOPOLOGY_H
+#define VMP_TREETOPOLOGY_H
 
 #include <vmp_guest.h>
+#include <vmp_instance.h>
 
 #include <memory>
 #include <optional>
@@ -11,15 +12,11 @@
 namespace vmp
 {
 
-class TreeInstance
+class TreeTopology
 {
-    friend class TreeInstanceParser;
+    friend class TreeInstanceBuilder;
 
   public:
-    size_t addInnerNode(size_t parent, std::unordered_set<int> pages);
-    size_t addLeafNode(size_t parent, const std::shared_ptr<const Guest> &guest,
-                       std::unordered_set<int> pages);
-
     [[nodiscard]] const std::vector<size_t> &childrenOfNode(size_t node) const;
     [[nodiscard]] size_t parentOfNode(size_t node) const;
 
@@ -32,8 +29,8 @@ class TreeInstance
     [[nodiscard]] const std::vector<size_t> &leafNodes() const;
     [[nodiscard]] bool isLeafNode(size_t node) const;
 
-    [[nodiscard]] size_t capacity() const;
     [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &guests() const;
+    [[nodiscard]] size_t guestCount() const;
 
     /// Removes the subtree rooted at `root`.
     /// Removes references to the subtree's guests from every ancestor's guest cache.
@@ -44,9 +41,9 @@ class TreeInstance
 
     static size_t rootNode();
 
-    TreeInstance(size_t capacity, std::unordered_set<int> rootPages);
-
   private:
+    explicit TreeTopology(std::unordered_set<int> rootPages);
+
     struct Node
     {
         std::size_t parent;
@@ -68,11 +65,11 @@ class TreeInstance
 
     std::vector<std::optional<Node>> nodes_;
     std::vector<size_t> leaves_;
-
-    const size_t capacity_;
     static constexpr size_t ROOT_NODE = 0;
 };
 
+using TreeInstance = Instance<TreeTopology>;
+
 }  // namespace vmp
 
-#endif  // VMP_TREEINSTANCE_H
+#endif  // VMP_TREETOPOLOGY_H

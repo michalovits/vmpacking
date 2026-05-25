@@ -1,29 +1,23 @@
-#include <vmp_generalinstance.h>
+#include <vmp_generaltopology.h>
 
 #include <ostream>
 
 namespace vmp
 {
 
-GeneralInstance::GeneralInstance(const size_t capacity,
-                                 std::vector<std::shared_ptr<const Guest>> guests)
-    : capacity_(capacity), guests_(std::move(guests))
+GeneralTopology::GeneralTopology(std::vector<std::shared_ptr<const Guest>> guests)
+    : guests_(std::move(guests))
 {
 }
 
-size_t GeneralInstance::guestCount() const
-{
-    return guests_.size();
-}
-
-const std::vector<std::shared_ptr<const Guest>> &GeneralInstance::guests() const
+const std::vector<std::shared_ptr<const Guest>> &GeneralTopology::guests() const
 {
     return guests_;
 }
 
-size_t GeneralInstance::capacity() const
+size_t GeneralTopology::guestCount() const
 {
-    return capacity_;
+    return guests_.size();
 }
 
 std::ostream &operator<<(std::ostream &os, const GeneralInstance &instance)

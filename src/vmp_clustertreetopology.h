@@ -1,7 +1,8 @@
-#ifndef VMP_CLUSTERTREEINSTANCE_H
-#define VMP_CLUSTERTREEINSTANCE_H
+#ifndef VMP_CLUSTERTREETOPOLOGY_H
+#define VMP_CLUSTERTREETOPOLOGY_H
 
 #include <vmp_guest.h>
+#include <vmp_instance.h>
 
 #include <memory>
 #include <unordered_set>
@@ -10,17 +11,11 @@
 namespace vmp
 {
 
-class ClusterTreeInstance
+class ClusterTreeTopology
 {
-    friend class ClusterTreeInstanceParser;
+    friend class ClusterTreeInstanceBuilder;
 
   public:
-    size_t addInnerNode(size_t cluster, std::vector<size_t> parents, std::unordered_set<int> pages);
-    size_t addLeafNode(std::vector<size_t> parents, const std::shared_ptr<const Guest> &guest,
-                       std::unordered_set<int> pages);
-
-    size_t createCluster(size_t parent);
-
     [[nodiscard]] const std::vector<size_t> &nodesOfCluster(size_t cluster) const;
     [[nodiscard]] const std::vector<size_t> &childrenOfCluster(size_t cluster) const;
     [[nodiscard]] size_t parentOfCluster(size_t cluster) const;
@@ -41,12 +36,13 @@ class ClusterTreeInstance
     [[nodiscard]] bool isLeafNode(size_t node) const;
 
     [[nodiscard]] std::vector<std::shared_ptr<const Guest>> guests() const;
-    [[nodiscard]] size_t capacity() const;
-    explicit ClusterTreeInstance(size_t capacity);
+    [[nodiscard]] size_t guestCount() const;
 
     static constexpr size_t ROOT_CLUSTER = 0;
 
   private:
+    ClusterTreeTopology();
+
     struct Node
     {
         // Parents must be in the same cluster
@@ -82,14 +78,13 @@ class ClusterTreeInstance
         Cluster() : parent(ROOT_CLUSTER), nodes({}) {}
     };
 
-    [[nodiscard]] bool allInCluster(const std::vector<size_t> &nodes, size_t cluster) const;
-
     std::vector<Node> nodes_;
     std::vector<size_t> leaves_;
     std::vector<Cluster> clusters_;
-
-    const size_t capacity_;
 };
 
+using ClusterTreeInstance = Instance<ClusterTreeTopology>;
+
 }  // namespace vmp
-#endif
+
+#endif  // VMP_CLUSTERTREETOPOLOGY_H

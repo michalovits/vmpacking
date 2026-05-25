@@ -49,8 +49,8 @@ void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
  * @param instance the instance to solve
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByNextFit(const InstanceType &instance)
+template <typename InstanceT>
+Packing solveByNextFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
@@ -95,8 +95,8 @@ void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
  * @param instance the instance to solve
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByFirstFit(const InstanceType &instance)
+template <typename InstanceT>
+Packing solveByFirstFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
@@ -152,8 +152,8 @@ void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd
  * @param instance the instance to solve
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByEfficiency(const InstanceType &instance)
+template <typename InstanceT>
+Packing solveByEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
@@ -240,8 +240,8 @@ void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt gu
  * @param instance the instance to solve
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByOverloadAndRemove(const InstanceType &instance)
+template <typename InstanceT>
+Packing solveByOverloadAndRemove(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
@@ -257,8 +257,8 @@ Packing solveByOverloadAndRemove(const InstanceType &instance)
  * @param instance the instance to solve
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByOpportunityAwareEfficiency(const InstanceType &instance)
+template <typename InstanceT>
+Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
     const auto &guests = instance.guests();
@@ -314,20 +314,21 @@ Packing solveByTree(const TreeInstance &instance,
                     void (*intermediateSolver)(size_t, GuestIt, GuestIt,
                                                std::vector<std::shared_ptr<Host>> &))
 {
-    TreeInstance workingInstance = instance;
+    auto workingTree = instance.topology();
+    const size_t capacity = instance.capacity();
 
     std::vector<std::shared_ptr<Host>> hosts;
 
     while (true) {
-        const auto lowerBounds = calculateAllSubtreeLowerBounds(workingInstance);
+        const auto lowerBounds = calculateAllSubtreeLowerBounds(workingTree, capacity);
 
-        if (lowerBounds.at(TreeInstance::rootNode()).count == 1) {
-            const auto &guests = workingInstance.guests();
+        if (lowerBounds.at(workingTree.rootNode()).count == 1) {
+            const auto &guests = workingTree.guests();
             if (guests.empty()) {
                 break;
             }
 
-            Host host(workingInstance.capacity());
+            Host host(capacity);
             host.addGuests(guests.begin(), guests.end());
             assert(!host.isOverfull());
 
@@ -343,7 +344,7 @@ Packing solveByTree(const TreeInstance &instance,
                 continue;
             }
 
-            const auto &children = workingInstance.childrenOfNode(node);
+            const auto &children = workingTree.childrenOfNode(node);
 
             if (!std::ranges::all_of(children, [&](const size_t child) {
                     return lowerBounds.at(child).count <= 1;
@@ -359,14 +360,14 @@ Packing solveByTree(const TreeInstance &instance,
 
         assert(minNode != std::numeric_limits<size_t>::max());
 
-        const auto &guestsToPack = workingInstance.guestsOfSubtree(minNode);
-        intermediateSolver(instance.capacity(), guestsToPack.begin(), guestsToPack.end(), hosts);
+        const auto &guestsToPack = workingTree.guestsOfSubtree(minNode);
+        intermediateSolver(capacity, guestsToPack.begin(), guestsToPack.end(), hosts);
 
-        if (minNode == TreeInstance::rootNode()) {
+        if (minNode == workingTree.rootNode()) {
             break;
         }
 
-        workingInstance.eraseSubtree(minNode);
+        workingTree.eraseSubtree(minNode);
     }
 
     return Packing(std::move(hosts));
@@ -383,21 +384,21 @@ Packing solveByTree(const TreeInstance &instance,
  * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
  * @return a valid packing
  */
-template <typename InstanceType>
-Packing solveByLocalSubsetEfficiency(const InstanceType &instance, const int initialSubsetSize,
+template <typename InstanceT>
+Packing solveByLocalSubsetEfficiency(const InstanceT &instance, const int initialSubsetSize,
                                      const bool decantMaximiserOutputs = true)
 {
     auto oneHostMaximiser =
-        [&](const InstanceType &inst,
+        [&](const InstanceT &inst,
             const std::unordered_map<std::shared_ptr<const Guest>, int> &profits) {
             return maximiseOneHostBySubsetEfficiency(inst, profits, initialSubsetSize);
         };
 
-    auto nHostMaximiser = [&](const InstanceType &inst, const size_t maxHosts) {
-        return maximiseByLocalSearch<InstanceType>(inst, maxHosts, oneHostMaximiser);
+    auto nHostMaximiser = [&](const InstanceT &inst, const size_t maxHosts) {
+        return maximiseByLocalSearch<InstanceT>(inst, maxHosts, oneHostMaximiser);
     };
 
-    return solveByMaximiser<InstanceType>(instance, nHostMaximiser, true, decantMaximiserOutputs);
+    return solveByMaximiser<InstanceT>(instance, nHostMaximiser, true, decantMaximiserOutputs);
 }
 
 /**
@@ -438,11 +439,10 @@ Packing solveByLocalClusterTree(const ClusterTreeInstance &instance,
  * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
  * @return a packing into minimum maxHosts
  */
-template <typename InstanceType>
-    requires Instance<InstanceType>
+template <typename InstanceT>
 Packing solveByMaximiser(
-    const InstanceType &instance,
-    const std::function<Packing(const InstanceType &instance, size_t maxHosts)> &maximiser,
+    const InstanceT &instance,
+    const std::function<Packing(const InstanceT &instance, size_t maxHosts)> &maximiser,
     const bool allowUnlimitedHosts = false, const bool decantMaximiserOutputs = true)
 {
     std::optional<Packing> bestPacking;

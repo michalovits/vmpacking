@@ -11,6 +11,7 @@
 #include <vmp_commontypes.h>
 #include <vmp_guest.h>
 #include <vmp_host.h>
+#include <vmp_treetopology.h>
 
 namespace vmp
 {
@@ -165,8 +166,8 @@ struct TreeLowerBounds
     TreeLowerBounds(const size_t size, const size_t count) : size(size), count(count) {}
 };
 
-std::unordered_map<size_t, TreeLowerBounds>
-calculateAllSubtreeLowerBounds(const TreeInstance &instance);
+std::unordered_map<size_t, TreeLowerBounds> calculateAllSubtreeLowerBounds(const TreeTopology &tree,
+                                                                           const size_t capacity);
 
 }  // namespace vmp
 

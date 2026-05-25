@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <instance_builders.h>
-#include <vmp_generalinstance.h>
+#include <vmp_generaltopology.h>
 #include <vmp_host.h>
 
 #include <vmp_packing.h>
@@ -9,6 +9,7 @@
 #include <vector>
 
 using namespace vmp;
+using vmp::testing::makeGeneralInstance;
 using vmp::testing::makeGuest;
 using vmp::testing::makeGuests;
 
@@ -41,8 +42,10 @@ TEST_CASE("Packing::addHost updates counts", "[packing]")
     Packing packing({});
 
     const auto guests = makeGuests({ { 1 }, { 2 } });
+
     auto host = std::make_shared<Host>(10);
     host->addGuests(guests.begin(), guests.end());
+
     packing.addHost(host);
 
     CHECK(packing.hostCount() == 1);
@@ -111,7 +114,7 @@ TEST_CASE("Packing::validateForInstance partial case", "[packing]")
 
 TEST_CASE("Packing::validateForInstance empty instance", "[packing]")
 {
-    const GeneralInstance instance(10, {});
+    const auto instance = makeGeneralInstance(10, {});
     const Packing packing({});
 
     CHECK(packing.validateForInstance(instance) == PACKING_OKAY);

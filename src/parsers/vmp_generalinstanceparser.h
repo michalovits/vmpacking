@@ -1,7 +1,7 @@
 #ifndef SOLVERS_INSTANCELOADER_H
 #define SOLVERS_INSTANCELOADER_H
 
-#include <vmp_generalinstance.h>
+#include <vmp_generaltopology.h>
 
 #include <limits>
 #include <nlohmann/json.hpp>
