@@ -21,7 +21,7 @@ size_t ClusterTreeBuilder::addInnerNode(const size_t cluster, std::vector<size_t
                                         std::unordered_set<int> pages)
 {
     auto &nodes = topology_.nodes_;
-    const size_t parentCluster = topology_.clusters_[cluster].parent;
+    [[maybe_unused]] const size_t parentCluster = topology_.clusters_[cluster].parent;
 
     assert(allInCluster(parents, parentCluster));
 

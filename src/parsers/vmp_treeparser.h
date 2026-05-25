@@ -11,13 +11,12 @@
 namespace vmp
 {
 
-class TreeInstanceParser
+class TreeParser
 {
   public:
-    explicit TreeInstanceParser(std::string directory, std::string capacityName = "capacity",
-                                std::string guestPagesName = "guest_pages",
-                                std::string pagesName = "pages",
-                                std::string childrenName = "children");
+    explicit TreeParser(std::string directory, std::string capacityName = "capacity",
+                        std::string guestPagesName = "guest_pages", std::string pagesName = "pages",
+                        std::string childrenName = "children");
 
     [[nodiscard]]
     std::vector<TreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());

@@ -1,0 +1,8 @@
+Some artefacts to test:
+[-] Packing (unit tests)
+[-] solverutils basics - calculateRelSize, calculateOpportunityAwareEfficiency, etc. (unit tests)
+[ ] calculateAllSubtreeLowerBounds (PBT)
+[ ] nextComb (PBT)
+[ ] decanters (PBT)
+[ ] maximisers (PBT)
+[ ] solvers (PBT)

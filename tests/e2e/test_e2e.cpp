@@ -1,12 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <vmp_clustertreeinstanceparser.h>
+#include <vmp_clustertreeparser.h>
 #include <vmp_clustertreetopology.h>
-#include <vmp_generalinstanceparser.h>
+#include <vmp_generalparser.h>
 #include <vmp_generaltopology.h>
 #include <vmp_packing.h>
 #include <vmp_solvers.h>
-#include <vmp_treeinstanceparser.h>
+#include <vmp_treeparser.h>
 #include <vmp_treetopology.h>
 
 #include <filesystem>
@@ -45,7 +45,7 @@ TEST_CASE("e2e: general instances", "[e2e]")
     const auto dir = inputDirectory("general");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::GeneralInstanceParser(dir);
+    auto parser = vmp::GeneralParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
@@ -66,7 +66,7 @@ TEST_CASE("e2e: tree instances", "[e2e]")
     const auto dir = inputDirectory("tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::TreeInstanceParser(dir);
+    auto parser = vmp::TreeParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
@@ -97,7 +97,7 @@ TEST_CASE("e2e: cluster-tree instances", "[e2e]")
     const auto dir = inputDirectory("cluster-tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::ClusterTreeInstanceParser(dir);
+    auto parser = vmp::ClusterTreeParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 

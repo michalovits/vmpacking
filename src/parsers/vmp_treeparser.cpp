@@ -1,4 +1,4 @@
-#include <vmp_treeinstanceparser.h>
+#include <vmp_treeparser.h>
 
 #include <cassert>
 #include <fstream>
@@ -8,9 +8,8 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-TreeInstanceParser::TreeInstanceParser(std::string directory, std::string capacityName,
-                                       std::string guestPagesName, std::string pagesName,
-                                       std::string childrenName)
+TreeParser::TreeParser(std::string directory, std::string capacityName, std::string guestPagesName,
+                       std::string pagesName, std::string childrenName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       guestPagesName(std::move(guestPagesName)),
@@ -19,7 +18,7 @@ TreeInstanceParser::TreeInstanceParser(std::string directory, std::string capaci
 {
 }
 
-std::shared_ptr<Guest> TreeInstanceParser::parseGuest(const json &nodeJson) const
+std::shared_ptr<Guest> TreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
         return nullptr;
@@ -28,8 +27,8 @@ std::shared_ptr<Guest> TreeInstanceParser::parseGuest(const json &nodeJson) cons
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void TreeInstanceParser::parseChildren(TreeBuilder &builder, const size_t parent,
-                                       const json &nodeJson) const
+void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
+                               const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
         std::unordered_set<int> childPages = childJson[pagesName].get<std::unordered_set<int>>();
@@ -45,7 +44,7 @@ void TreeInstanceParser::parseChildren(TreeBuilder &builder, const size_t parent
     }
 };
 
-std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
+std::vector<TreeInstance> TreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 

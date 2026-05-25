@@ -65,6 +65,7 @@ class TreeTopology
 
     std::vector<std::optional<Node>> nodes_;
     std::vector<size_t> leaves_;
+
     static constexpr size_t ROOT_NODE = 0;
 };
 

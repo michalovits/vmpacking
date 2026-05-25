@@ -1,4 +1,4 @@
-#include <vmp_generalinstanceparser.h>
+#include <vmp_generalparser.h>
 
 #include <filesystem>
 #include <fstream>
@@ -9,8 +9,8 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-GeneralInstanceParser::GeneralInstanceParser(std::string directory, std::string capacityName,
-                                             std::string guestsName)
+GeneralParser::GeneralParser(std::string directory, std::string capacityName,
+                             std::string guestsName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       guestsName(std::move(guestsName))
@@ -36,7 +36,7 @@ makeInstances(const std::vector<int> &capacityData,
     return instances;
 }
 
-std::vector<GeneralInstance> GeneralInstanceParser::load(const size_t maxInstances)
+std::vector<GeneralInstance> GeneralParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 

@@ -11,16 +11,15 @@
 namespace vmp
 {
 
-class ClusterTreeInstanceParser
+class ClusterTreeParser
 {
   public:
-    explicit ClusterTreeInstanceParser(std::string directory, std::string capacityName = "capacity",
-                                       std::string nodesName = "nodes",
-                                       std::string nodeIdName = "node_id",
-                                       std::string nodeParentsName = "node_parents",
-                                       std::string pagesName = "node_pages",
-                                       std::string guestPagesName = "guest_pages",
-                                       std::string clusterChildrenName = "cluster_children");
+    explicit ClusterTreeParser(std::string directory, std::string capacityName = "capacity",
+                               std::string nodesName = "nodes", std::string nodeIdName = "node_id",
+                               std::string nodeParentsName = "node_parents",
+                               std::string pagesName = "node_pages",
+                               std::string guestPagesName = "guest_pages",
+                               std::string clusterChildrenName = "cluster_children");
 
     [[nodiscard]]
     std::vector<ClusterTreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());

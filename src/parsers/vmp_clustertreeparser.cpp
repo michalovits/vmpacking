@@ -1,4 +1,4 @@
-#include <vmp_clustertreeinstanceparser.h>
+#include <vmp_clustertreeparser.h>
 
 #include <cassert>
 #include <fstream>
@@ -8,10 +8,10 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-ClusterTreeInstanceParser::ClusterTreeInstanceParser(
-    std::string directory, std::string capacityName, std::string nodesName, std::string nodeIdName,
-    std::string nodeParentsName, std::string pagesName, std::string guestPagesName,
-    std::string clusterChildrenName)
+ClusterTreeParser::ClusterTreeParser(std::string directory, std::string capacityName,
+                                     std::string nodesName, std::string nodeIdName,
+                                     std::string nodeParentsName, std::string pagesName,
+                                     std::string guestPagesName, std::string clusterChildrenName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       nodesName(std::move(nodesName)),
@@ -23,7 +23,7 @@ ClusterTreeInstanceParser::ClusterTreeInstanceParser(
 {
 }
 
-std::shared_ptr<Guest> ClusterTreeInstanceParser::parseGuest(const json &nodeJson) const
+std::shared_ptr<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
         return nullptr;
@@ -32,9 +32,10 @@ std::shared_ptr<Guest> ClusterTreeInstanceParser::parseGuest(const json &nodeJso
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void ClusterTreeInstanceParser::parseClusterSubtree(
-    ClusterTreeBuilder &builder, const size_t parentCluster, const json &clusterJson,
-    std::unordered_map<size_t, size_t> &fromJsonNode, const bool skipRoot) const
+void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const size_t parentCluster,
+                                            const json &clusterJson,
+                                            std::unordered_map<size_t, size_t> &fromJsonNode,
+                                            const bool skipRoot) const
 {
     // Link directly to the sentinel or create the root
     const size_t cluster = skipRoot ? builder.rootCluster() : builder.createCluster(parentCluster);
@@ -64,7 +65,7 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
     }
 }
 
-std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t maxInstances)
+std::vector<ClusterTreeInstance> ClusterTreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
