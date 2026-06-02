@@ -34,7 +34,7 @@ TreeBuilder::NodeId TreeBuilder::addLeafNode(const NodeId parentNid, Guest guest
     instance_.leaves_.push_back(nid);
     guests_.push_back(std::move(guest));
 
-    // Guest pointers are bound in build(); leave the guest caches empty for now.
+    // Cache left empty until we build and finalise the guest allocations
     nodes.push_back(Tree::Node(parentNid, std::move(pages), {}));
     nodes[parentNid]->children.push_back(nid);
 

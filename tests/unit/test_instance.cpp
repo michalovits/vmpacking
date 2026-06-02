@@ -1,15 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
-#include <instance_builders.h>
 #include <vmp_instance.h>
 
 #include <unordered_set>
 
 using namespace vmp;
-using vmp::testing::makeInstance;
 
 TEST_CASE("Instance initialisation", "[instance]")
 {
-    const auto instance = makeInstance(8, { { 1, 2 }, { 3, 4 }, { 5 } });
+    const auto g1 = Guest({ 1, 2 });
+    const auto g2 = Guest({ 3, 4 });
+    const auto g3 = Guest({ 5 });
+
+    const auto instance = vmp::Instance(8, { g1, g2, g3 });
 
     CHECK(instance.capacity() == 8);
     CHECK(instance.guestCount() == 3);
@@ -18,7 +20,11 @@ TEST_CASE("Instance initialisation", "[instance]")
 
 TEST_CASE("Instance preserves guest order", "[instance]")
 {
-    const auto instance = makeInstance(10, { { 1 }, { 2 }, { 3 } });
+    const auto g1 = Guest({ 1 });
+    const auto g2 = Guest({ 2 });
+    const auto g3 = Guest({ 3 });
+
+    const auto instance = vmp::Instance(10, { g1, g2, g3 });
 
     REQUIRE(instance.guests().size() == 3);
     CHECK(instance.guests()[0]->pages == std::unordered_set{ 1 });
@@ -28,7 +34,7 @@ TEST_CASE("Instance preserves guest order", "[instance]")
 
 TEST_CASE("Empty Instance", "[instance]")
 {
-    const auto instance = makeInstance(5, {});
+    const auto instance = vmp::Instance(5, {});
     CHECK(instance.capacity() == 5);
     CHECK(instance.guestCount() == 0);
     CHECK(instance.guests().empty());

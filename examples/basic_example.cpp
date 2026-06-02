@@ -13,7 +13,10 @@ const auto g3 = vmp::Guest({ 1 });
 const auto g4 = vmp::Guest({ 3, 5 });
 const auto g5 = vmp::Guest({ 6, 8 });
 
-const auto instance = vmp::Instance(capacity, { g1, g2, g3, g4, g5 });
+vmp::Instance makeInstance()
+{
+    return vmp::Instance(capacity, { g1, g2, g3, g4, g5 });
+}
 
 vmp::Tree makeTree()
 {
@@ -40,6 +43,7 @@ int main()
         std::cout << p.hostCount() << std::endl;
     };
 
+    const auto instance = makeInstance();
     const auto tree = makeTree();
 
     // Using the general solvers

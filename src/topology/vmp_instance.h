@@ -12,9 +12,6 @@
 namespace vmp
 {
 
-/// Owns a vector of guests plus a capacity. Immutable after construction.
-/// Held by shared_ptr so topologies can share the underlying data; not copyable
-/// (the cached guest pointers would dangle into the source).
 class Instance
 {
   public:
@@ -28,8 +25,9 @@ class Instance
     }
 
     Instance(const Instance &) = delete;
-    Instance &operator=(const Instance &) = delete;
     Instance(Instance &&) = default;
+
+    Instance &operator=(const Instance &) = delete;
     Instance &operator=(Instance &&) = default;
 
     [[nodiscard]] std::span<const Guest *const> guests() const { return guestPtrs_; }
@@ -38,6 +36,7 @@ class Instance
 
   private:
     size_t capacity_;
+
     std::vector<Guest> guests_;
     std::vector<const Guest *> guestPtrs_;
 };

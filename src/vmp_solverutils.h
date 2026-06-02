@@ -94,11 +94,11 @@ std::vector<std::vector<const Guest *>> partitionGuestsIndividually(GuestIt gues
                                                                     GuestIt guestsEnd)
 {
     // Per-guest decanting
-    std::vector<std::vector<const Guest *>> partition;
+    std::vector<std::vector<const Guest *>> partitions;
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
-        partition.push_back(std::vector{ *guestsBegin });
+        partitions.push_back(std::vector{ *guestsBegin });
     }
-    return partition;
+    return partitions;
 }
 
 inline bool guestsHaveSharedPage(const Guest &guest1, const Guest &guest2)
