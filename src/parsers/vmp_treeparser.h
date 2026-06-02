@@ -3,6 +3,7 @@
 
 #include <vmp_treebuilder.h>
 
+#include <filesystem>
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <optional>

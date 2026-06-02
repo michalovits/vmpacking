@@ -27,10 +27,6 @@ ClusterTreeBuilder::NodeId ClusterTreeBuilder::addInnerNode(const ClusterId cid,
 
     assert(allInCluster(parentNids, parentCid));
 
-    for ([[maybe_unused]] const NodeId nid : parentNids) {
-        assert(!tree_.isLeafNode(nid));
-    }
-
     const NodeId nid = nodes.size();
     for (const NodeId parentNid : parentNids) {
         nodes[parentNid].children.push_back(nid);

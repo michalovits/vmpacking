@@ -1,5 +1,5 @@
-#ifndef VMP_ITERATORS_H
-#define VMP_ITERATORS_H
+#ifndef VMP_COMMONTYPES_H
+#define VMP_COMMONTYPES_H
 
 #include <iterator>
 #include <memory>
@@ -17,4 +17,4 @@ concept ConstPtrIterator =
 
 }  // namespace vmp
 
-#endif  // VMP_ITERATORS_H
+#endif  // VMP_COMMONTYPES_H
