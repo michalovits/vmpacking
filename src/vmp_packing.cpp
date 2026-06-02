@@ -5,7 +5,7 @@
 namespace vmp
 {
 
-Packing::Packing(std::vector<std::shared_ptr<Host>> hosts)
+Packing::Packing(std::vector<std::unique_ptr<Host>> hosts)
     : hosts_(std::move(hosts)), guestCount_(0)
 {
     for (const auto &host : this->hosts_) {
@@ -15,16 +15,16 @@ Packing::Packing(std::vector<std::shared_ptr<Host>> hosts)
 
 void Packing::decantGuests()
 {
-    using SetGuestIt = std::unordered_set<std::shared_ptr<const Guest>>::const_iterator;
+    using SetGuestIt = std::unordered_set<const Guest *>::const_iterator;
     decantGuestByAllPartitioners<SetGuestIt>(hosts_);
 }
 
-void Packing::addHost(const std::shared_ptr<Host> &host)
+void Packing::addHost(std::unique_ptr<Host> host)
 {
     // TODO this copy is fine, but Packing is used as an intermediate representation in some
     // solvers. Remove those uses of Packing.
-    hosts_.push_back(host);
     guestCount_ += host->guestCount();
+    hosts_.push_back(std::move(host));
 }
 
 size_t Packing::guestCount() const
@@ -37,7 +37,7 @@ size_t Packing::hostCount() const
     return hosts_.size();
 }
 
-std::vector<std::shared_ptr<Host>> &Packing::hosts()
+std::vector<std::unique_ptr<Host>> &Packing::hosts()
 {
     return hosts_;
 }

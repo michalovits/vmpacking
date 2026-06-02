@@ -1,5 +1,5 @@
-#ifndef SOLVERS_PACKING_H
-#define SOLVERS_PACKING_H
+#ifndef VMP_PACKING_H
+#define VMP_PACKING_H
 
 #include <vmp_host.h>
 
@@ -42,9 +42,9 @@ inline std::ostream &operator<<(std::ostream &os, const PackingValidity validity
 class Packing
 {
   public:
-    explicit Packing(std::vector<std::shared_ptr<Host>> hosts);
+    explicit Packing(std::vector<std::unique_ptr<Host>> hosts);
 
-    Packing(const Packing &other) noexcept = default;
+    Packing(const Packing &other) = delete;
     Packing(Packing &&other) noexcept = default;
 
     Packing &operator=(Packing &&other) noexcept = default;
@@ -58,11 +58,10 @@ class Packing
      * @param instance the instance against which to validate
      * @return
      */
-    template <typename InstanceType>
-        requires Instance<InstanceType>
-    PackingValidity validateForInstance(const InstanceType &instance) const
+    template <typename InstanceT>
+    PackingValidity validateForInstance(const InstanceT &instance) const
     {
-        std::unordered_set<std::shared_ptr<const Guest>> placedGuests;
+        std::unordered_set<const Guest *> placedGuests;
 
         for (const auto &host : hosts_) {
             if (host->guests().empty()) {
@@ -71,16 +70,15 @@ class Packing
             if (host->isOverfull()) {
                 return PACKING_HOST_OVERFULL;
             }
-            for (const auto &guest : host->guests()) {
+            for (const Guest *guest : host->guests()) {
                 placedGuests.insert(guest);
             }
         }
 
-        const auto &guests = instance.guests();
-        const auto isPlaced = [&](const auto &guest) {
-            return placedGuests.contains(guest);
+        const auto isPlaced = [&](const Guest &guest) {
+            return placedGuests.contains(&guest);
         };
-        if (!std::ranges::all_of(guests, isPlaced)) {
+        if (!std::ranges::all_of(instance.guests(), isPlaced)) {
             return PACKING_PARTIAL;
         }
 
@@ -89,17 +87,17 @@ class Packing
 
     void decantGuests();
 
-    void addHost(const std::shared_ptr<Host> &host);
+    void addHost(std::unique_ptr<Host> host);
 
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t hostCount() const;
 
-    [[nodiscard]] std::vector<std::shared_ptr<Host>> &hosts();
+    [[nodiscard]] std::vector<std::unique_ptr<Host>> &hosts();
 
   private:
-    std::vector<std::shared_ptr<Host>> hosts_;
+    std::vector<std::unique_ptr<Host>> hosts_;
     size_t guestCount_;
 };
 
 }  // namespace vmp
-#endif  // SOLVERS_PACKING_H
+#endif  // VMP_PACKING_H

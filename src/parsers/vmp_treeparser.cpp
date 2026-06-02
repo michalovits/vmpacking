@@ -1,4 +1,4 @@
-#include <vmp_treeinstanceparser.h>
+#include <vmp_treeparser.h>
 
 #include <cassert>
 #include <fstream>
@@ -8,9 +8,8 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-TreeInstanceParser::TreeInstanceParser(std::string directory, std::string capacityName,
-                                       std::string guestPagesName, std::string pagesName,
-                                       std::string childrenName)
+TreeParser::TreeParser(std::string directory, std::string capacityName, std::string guestPagesName,
+                       std::string pagesName, std::string childrenName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       guestPagesName(std::move(guestPagesName)),
@@ -19,37 +18,37 @@ TreeInstanceParser::TreeInstanceParser(std::string directory, std::string capaci
 {
 }
 
-std::shared_ptr<Guest> TreeInstanceParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> TreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
-        return nullptr;
+        return std::nullopt;
     }
-    return std::make_shared<Guest>(
+    return Guest(
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void TreeInstanceParser::parseChildren(TreeInstance &instance, const size_t parent,
-                                       const json &nodeJson) const
+void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
+                               const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
-        std::unordered_set<int> childPages = childJson[pagesName].get<std::unordered_set<int>>();
+        auto childPages = childJson[pagesName].get<std::unordered_set<int>>();
 
         const size_t child =
             childJson.contains(guestPagesName)
-                ? instance.addLeafNode(parent, parseGuest(childJson), std::move(childPages))
-                : instance.addInnerNode(parent, std::move(childPages));
+                ? builder.addLeafNode(parent, *parseGuest(childJson), std::move(childPages))
+                : builder.addInnerNode(parent, std::move(childPages));
 
         if (childJson.contains(childrenName)) {
-            parseChildren(instance, child, childJson);
+            parseChildren(builder, child, childJson);
         }
     }
 };
 
-std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
+std::vector<Tree> TreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
-    std::vector<TreeInstance> instances;
+    std::vector<Tree> instances;
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -75,20 +74,21 @@ std::vector<TreeInstance> TreeInstanceParser::load(const size_t maxInstances)
             assert(rootNodeJson.contains(capacityName));
 
             const size_t capacity = rootNodeJson[capacityName].get<size_t>();
-            const auto rootGuest = parseGuest(rootNodeJson);
+            auto rootGuest = parseGuest(rootNodeJson);
             auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeInstance instance(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
-                                                                 : std::move(rootPages));
-            if (rootGuest != nullptr) {
-                instance.addLeafNode(TreeInstance::rootNode(), rootGuest, std::move(rootPages));
+            TreeBuilder builder(capacity, rootGuest.has_value() ? std::unordered_set<int>{}
+                                                                : std::move(rootPages));
+            if (rootGuest.has_value()) {
+                builder.addLeafNode(builder.rootNode(), std::move(*rootGuest),
+                                    std::move(rootPages));
             }
 
             if (rootNodeJson.contains(childrenName)) {
-                parseChildren(instance, TreeInstance::rootNode(), rootNodeJson);
+                parseChildren(builder, builder.rootNode(), rootNodeJson);
             }
 
-            instances.push_back(std::move(instance));
+            instances.push_back(std::move(builder).build());
             ++processedInstances[path];
 
             if (instances.size() == maxInstances) {

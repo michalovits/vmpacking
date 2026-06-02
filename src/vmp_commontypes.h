@@ -1,24 +1,20 @@
-#ifndef VMP_ITERATORS_H
-#define VMP_ITERATORS_H
+#ifndef VMP_COMMONTYPES_H
+#define VMP_COMMONTYPES_H
 
-#include <vmp_treeinstance.h>
-
-#include <vmp_clustertreeinstance.h>
-#include <vmp_generalinstance.h>
-
+#include <iterator>
 #include <memory>
 
 namespace vmp
 {
 
 template <typename It, typename T>
-concept SharedPtrIterator =
-    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, std::shared_ptr<T>>;
+concept UniquePtrIterator =
+    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, std::unique_ptr<T>>;
 
-template <typename T>
-concept Instance = std::same_as<T, GeneralInstance> || std::same_as<T, ClusterTreeInstance> ||
-                   std::same_as<T, TreeInstance>;
+template <typename It, typename T>
+concept ConstPtrIterator =
+    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, const T *>;
 
 }  // namespace vmp
 
-#endif  // VMP_ITERATORS_H
+#endif  // VMP_COMMONTYPES_H

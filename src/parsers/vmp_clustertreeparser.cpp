@@ -1,4 +1,4 @@
-#include <vmp_clustertreeinstanceparser.h>
+#include <vmp_clustertreeparser.h>
 
 #include <cassert>
 #include <fstream>
@@ -8,10 +8,10 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-ClusterTreeInstanceParser::ClusterTreeInstanceParser(
-    std::string directory, std::string capacityName, std::string nodesName, std::string nodeIdName,
-    std::string nodeParentsName, std::string pagesName, std::string guestPagesName,
-    std::string clusterChildrenName)
+ClusterTreeParser::ClusterTreeParser(std::string directory, std::string capacityName,
+                                     std::string nodesName, std::string nodeIdName,
+                                     std::string nodeParentsName, std::string pagesName,
+                                     std::string guestPagesName, std::string clusterChildrenName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       nodesName(std::move(nodesName)),
@@ -23,26 +23,27 @@ ClusterTreeInstanceParser::ClusterTreeInstanceParser(
 {
 }
 
-std::shared_ptr<Guest> ClusterTreeInstanceParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
-        return nullptr;
+        return std::nullopt;
     }
-    return std::make_shared<Guest>(
+    return Guest(
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void ClusterTreeInstanceParser::parseClusterSubtree(
-    ClusterTreeInstance &instance, const size_t parentCluster, const json &clusterJson,
-    std::unordered_map<size_t, size_t> &fromJsonNode, const bool skipRoot) const
+void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const size_t parentCluster,
+                                            const json &clusterJson,
+                                            std::unordered_map<size_t, size_t> &fromJsonNode,
+                                            const bool skipRoot) const
 {
-    const size_t cluster =
-        skipRoot ? ClusterTreeInstance::rootCluster() : instance.createCluster(parentCluster);
+    // Link directly to the sentinel or create the root
+    const size_t cluster = skipRoot ? builder.rootCluster() : builder.createCluster(parentCluster);
 
     if (clusterJson.contains(nodesName)) {
         for (const auto &nodeJson : clusterJson[nodesName]) {
             auto pages = nodeJson[pagesName].get<std::unordered_set<int>>();
-            auto jsonNodeId = nodeJson[nodeIdName].get<size_t>();
+            const size_t jsonNodeId = nodeJson[nodeIdName].get<size_t>();
             std::vector<size_t> parents;
 
             for (const size_t jsonNodeParent : nodeJson[nodeParentsName].get<std::vector<int>>()) {
@@ -51,24 +52,24 @@ void ClusterTreeInstanceParser::parseClusterSubtree(
 
             const size_t node =
                 nodeJson.contains(guestPagesName)
-                    ? instance.addLeafNode(std::move(parents), parseGuest(nodeJson),
-                                           std::move(pages))
-                    : instance.addInnerNode(cluster, std::move(parents), std::move(pages));
+                    ? builder.addLeafNode(std::move(parents), *parseGuest(nodeJson),
+                                          std::move(pages))
+                    : builder.addInnerNode(cluster, std::move(parents), std::move(pages));
 
             fromJsonNode[jsonNodeId] = node;
         }
     }
 
     for (const auto &clusterChildJson : clusterJson[clusterChildrenName]) {
-        parseClusterSubtree(instance, cluster, clusterChildJson, fromJsonNode, false);
+        parseClusterSubtree(builder, cluster, clusterChildJson, fromJsonNode, false);
     }
 }
 
-std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t maxInstances)
+std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
-    std::vector<ClusterTreeInstance> instances;
+    std::vector<ClusterTree> instances;
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -96,11 +97,10 @@ std::vector<ClusterTreeInstance> ClusterTreeInstanceParser::load(const size_t ma
             const size_t capacity = instanceJson[capacityName].get<size_t>();
             std::unordered_map<size_t, size_t> jsonToNodeIds;
 
-            ClusterTreeInstance instance(capacity);
-            parseClusterSubtree(instance, ClusterTreeInstance::rootCluster(), instanceJson,
-                                jsonToNodeIds, true);
+            ClusterTreeBuilder builder(capacity);
+            parseClusterSubtree(builder, builder.rootCluster(), instanceJson, jsonToNodeIds, true);
 
-            instances.push_back(std::move(instance));
+            instances.push_back(std::move(builder).build());
             ++processedInstances[path];
 
             if (instances.size() == maxInstances) {

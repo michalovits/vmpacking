@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <vmp_clustertreeinstance.h>
-#include <vmp_clustertreeinstanceparser.h>
-#include <vmp_generalinstance.h>
-#include <vmp_generalinstanceparser.h>
+#include <vmp_clustertree.h>
+#include <vmp_clustertreeparser.h>
+#include <vmp_instance.h>
+#include <vmp_instanceparser.h>
 #include <vmp_packing.h>
 #include <vmp_solvers.h>
-#include <vmp_treeinstance.h>
-#include <vmp_treeinstanceparser.h>
+#include <vmp_tree.h>
+#include <vmp_treeparser.h>
 
 #include <filesystem>
 
@@ -29,7 +29,7 @@ std::string inputDirectory(const char *subdir)
     return std::string(VMP_TEST_INSTANCE_DIR) + "/" + subdir;
 }
 
-using SetGuestIt = std::unordered_set<std::shared_ptr<const vmp::Guest>>::const_iterator;
+using SetGuestIt = std::unordered_set<const vmp::Guest *>::const_iterator;
 
 #define SKIP_IF_MISSING(dir)                              \
     do {                                                  \
@@ -45,7 +45,7 @@ TEST_CASE("e2e: general instances", "[e2e]")
     const auto dir = inputDirectory("general");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::GeneralInstanceParser(dir);
+    auto parser = vmp::InstanceParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
@@ -66,17 +66,17 @@ TEST_CASE("e2e: tree instances", "[e2e]")
     const auto dir = inputDirectory("tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::TreeInstanceParser(dir);
+    auto parser = vmp::TreeParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 
-    const auto solveByTreeFirstFit = [](const vmp::TreeInstance &inst) {
+    const auto solveByTreeFirstFit = [](const vmp::Tree &inst) {
         return vmp::solveByTree<SetGuestIt>(inst, vmp::proceedByFirstFit);
     };
-    const auto solveByTreeEfficiency = [](const vmp::TreeInstance &inst) {
+    const auto solveByTreeEfficiency = [](const vmp::Tree &inst) {
         return vmp::solveByTree<SetGuestIt>(inst, vmp::proceedByEfficiency);
     };
-    const auto solveByTreeOverloadAndRemove = [](const vmp::TreeInstance &inst) {
+    const auto solveByTreeOverloadAndRemove = [](const vmp::Tree &inst) {
         return vmp::solveByTree<SetGuestIt>(inst, vmp::proceedByOverloadAndRemove);
     };
 
@@ -97,7 +97,7 @@ TEST_CASE("e2e: cluster-tree instances", "[e2e]")
     const auto dir = inputDirectory("cluster-tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::ClusterTreeInstanceParser(dir);
+    auto parser = vmp::ClusterTreeParser(dir);
     const auto instances = parser.load();
     REQUIRE_FALSE(instances.empty());
 

@@ -1,6 +1,5 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <instance_builders.h>
 #include <vmp_guest.h>
 #include <vmp_host.h>
 
@@ -12,8 +11,6 @@
 
 using namespace vmp;
 using Catch::Approx;
-using vmp::testing::makeGuest;
-using vmp::testing::makeGuests;
 
 TEST_CASE("calculateRelSize weights pages by frequency", "[solverutils]")
 {
@@ -49,32 +46,46 @@ TEST_CASE("calculateSizeRelRatio is one when no pages are shared", "[solverutils
 
 TEST_CASE("calculateOpportunityAwareEfficiency with a single host", "[solverutils]")
 {
-    const auto guest = makeGuest({ 1, 2, 3, 4 });
+    const auto g1 = vmp::Guest({ 1, 2, 3, 4 });
+    const auto g2 = vmp::Guest({ 1, 2 });
 
-    auto host = std::make_shared<Host>(10);
-    host->addGuest(makeGuest({ 1, 2 }));
+    auto host = std::make_unique<Host>(10);
+    host->addGuest(&g2);
+
+    std::vector<std::unique_ptr<Host>> hosts;
+    hosts.push_back(std::move(host));
 
     // (pagesOnHost = 2 + minDifference = 0) / sqrt(4)
-    CHECK(calculateOpportunityAwareEfficiency(*guest, host, { host }) == Approx(1.0));
+    CHECK(calculateOpportunityAwareEfficiency(g1, *hosts[0], hosts) == Approx(1.0));
 }
 
 TEST_CASE("calculateOpportunityAwareEfficiency rewards distance from other hosts", "[solverutils]")
 {
-    const auto guest = makeGuest({ 1, 2, 3, 4 });
+    const auto g1 = vmp::Guest({ 1, 2, 3, 4 });
+    const auto g2 = vmp::Guest({ 1, 2 });
+    const auto g3 = vmp::Guest({ 5, 6 });
 
-    auto host = std::make_shared<Host>(10);
-    host->addGuest(makeGuest({ 1, 2 }));
+    auto host = std::make_unique<Host>(10);
+    host->addGuest(&g2);
 
-    auto other = std::make_shared<Host>(10);
-    other->addGuest(makeGuest({ 2, 5, 6 }));
+    auto other = std::make_unique<Host>(10);
+    other->addGuest(&g3);
+
+    std::vector<std::unique_ptr<Host>> hosts;
+    hosts.push_back(std::move(host));
+    hosts.push_back(std::move(other));
 
     // (pagesOnHost = 2 + minDifference = 2) / sqrt(4)
-    CHECK(calculateOpportunityAwareEfficiency(*guest, host, { host, other }) == Approx(2.0));
+    CHECK(calculateOpportunityAwareEfficiency(g1, *hosts[0], hosts) == Approx(2.0));
 }
 
 TEST_CASE("calculatePageFrequencies over guests", "[solverutils]")
 {
-    const auto guests = makeGuests({ { 1, 2 }, { 2, 3 }, { 3 } });
+    const auto g1 = vmp::Guest({ 1, 2 });
+    const auto g2 = vmp::Guest({ 2, 3 });
+    const auto g3 = vmp::Guest({ 3 });
+
+    const auto guests = std::vector{ &g1, &g2, &g3 };
 
     const auto freq = calculatePageFrequencies(guests.begin(), guests.end());
 
@@ -86,14 +97,20 @@ TEST_CASE("calculatePageFrequencies over guests", "[solverutils]")
 
 TEST_CASE("calculatePageFrequencies over hosts", "[solverutils]")
 {
-    auto hostA = std::make_shared<Host>(10);
-    hostA->addGuest(makeGuest({ 1, 2 }));
-    hostA->addGuest(makeGuest({ 2, 3 }));
+    const auto g1 = vmp::Guest({ 1, 2 });
+    const auto g2 = vmp::Guest({ 2, 3 });
+    const auto g3 = vmp::Guest({ 3, 4 });
 
-    auto hostB = std::make_shared<Host>(10);
-    hostB->addGuest(makeGuest({ 3, 4 }));
+    auto hostA = std::make_unique<Host>(10);
+    hostA->addGuest(&g1);
+    hostA->addGuest(&g2);
 
-    const auto hosts = std::vector<std::shared_ptr<const Host>>{ hostA, hostB };
+    auto hostB = std::make_unique<Host>(10);
+    hostB->addGuest(&g3);
+
+    std::vector<std::unique_ptr<Host>> hosts;
+    hosts.push_back(std::move(hostA));
+    hosts.push_back(std::move(hostB));
     const auto freq = calculatePageFrequencies(hosts.begin(), hosts.end());
 
     CHECK(freq.size() == 4);

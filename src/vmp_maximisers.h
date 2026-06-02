@@ -1,13 +1,12 @@
 #ifndef VMP_MAXIMISERS_H
 #define VMP_MAXIMISERS_H
 
-#include <vmp_clustertreeinstance.h>
-#include <vmp_commontypes.h>
+#include <vmp_clustertree.h>
+#include <vmp_instance.h>
 #include <vmp_packing.h>
 
 #include <functional>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -25,10 +24,9 @@ namespace vmp
  * @param initialSubsetSize the initial subset size to try. Defaults to 1.
  * @return a host with the most valuable guests placed
  */
-Host maximiseOneHostBySubsetEfficiency(
-    const GeneralInstance &instance,
-    const std::unordered_map<std::shared_ptr<const Guest>, int> &profits,
-    int initialSubsetSize = 1);
+Host maximiseOneHostBySubsetEfficiency(const Instance &instance,
+                                       const std::unordered_map<const Guest *, int> &profits,
+                                       int initialSubsetSize = 1);
 
 /**
  * Maximises the number of guests placed on a single host on the Cluster Tree
@@ -38,9 +36,8 @@ Host maximiseOneHostBySubsetEfficiency(
  * @param profits the profit acquired by packing each guest
  * @return the maximised host
  */
-Host maximiseOneHostByClusterTree(
-    const ClusterTreeInstance &instance,
-    const std::unordered_map<std::shared_ptr<const Guest>, int> &profits);
+Host maximiseOneHostByClusterTree(const ClusterTree &tree,
+                                  const std::unordered_map<const Guest *, int> &profits);
 
 /**
  * Maximises the number of guests placed on `allowedHostCount` hosts by using a
@@ -51,19 +48,17 @@ Host maximiseOneHostByClusterTree(
  * @param oneHostMaximiser the single-host maximiser to use
  * @return a packing with at most `allowedHostCount` hosts
  */
-template <typename InstanceType>
-    requires Instance<InstanceType>
+template <typename InstanceT>
 Packing maximiseByLocalSearch(
-    const InstanceType &instance, const size_t allowedHostCount,
-    const std::function<Host(const InstanceType &,
-                             const std::unordered_map<std::shared_ptr<const Guest>, int> &)>
+    const InstanceT &instance, const size_t allowedHostCount,
+    const std::function<Host(const InstanceT &, const std::unordered_map<const Guest *, int> &)>
         &oneHostMaximiser)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
-    std::unordered_map<std::shared_ptr<const Guest>, int> profits;
+    std::vector<std::unique_ptr<Host>> hosts;
+    std::unordered_map<const Guest *, int> profits;
 
     for (const auto &guest : instance.guests()) {
-        profits[guest] = 1;
+        profits[&guest] = 1;
     }
 
     size_t placed = 0;
@@ -81,7 +76,7 @@ Packing maximiseByLocalSearch(
         }
 
         placed += newHost.guests().size();
-        hosts.emplace_back(std::make_shared<Host>(std::move(newHost)));
+        hosts.emplace_back(std::make_unique<Host>(std::move(newHost)));
     }
 
     return Packing(std::move(hosts));
