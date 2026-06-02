@@ -35,12 +35,12 @@ namespace vmp
  */
 template <ConstPtrIterator<Guest> GuestIt>
 void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                      std::vector<std::shared_ptr<Host>> &hosts)
+                      std::vector<std::unique_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
         if (hosts.empty() || !hosts.back()->accommodatesGuest(*guest)) {
-            hosts.push_back(std::make_shared<Host>(capacity));
+            hosts.push_back(std::make_unique<Host>(capacity));
         }
         hosts.back()->addGuest(guest);
     }
@@ -55,7 +55,7 @@ void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
 template <typename InstanceT>
 Packing solveByNextFit(const InstanceT &instance)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
     const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
     proceedByNextFit(instance.capacity(), guests.begin(), guests.end(), hosts);
@@ -75,7 +75,7 @@ Packing solveByNextFit(const InstanceT &instance)
  */
 template <ConstPtrIterator<Guest> GuestIt>
 void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                       std::vector<std::shared_ptr<Host>> &hosts)
+                       std::vector<std::unique_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
@@ -84,7 +84,7 @@ void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
             hosts, [&](const auto &host) { return host->accommodatesGuest(*guest); });
 
         if (hostIter == hosts.end()) {
-            hosts.push_back(std::make_shared<Host>(capacity));
+            hosts.push_back(std::make_unique<Host>(capacity));
             hostIter = hosts.end() - 1;
         }
 
@@ -101,7 +101,7 @@ void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
 template <typename InstanceT>
 Packing solveByFirstFit(const InstanceT &instance)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
     const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
     proceedByFirstFit(instance.capacity(), guests.begin(), guests.end(), hosts);
@@ -121,13 +121,13 @@ Packing solveByFirstFit(const InstanceT &instance)
  */
 template <ConstPtrIterator<Guest> GuestIt>
 void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                         std::vector<std::shared_ptr<Host>> &hosts)
+                         std::vector<std::unique_ptr<Host>> &hosts)
 {
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         const auto &guest = *guestsBegin;
 
         double bestRelSize = guest->uniquePageCount();
-        std::shared_ptr<Host> bestHost = nullptr;
+        Host *bestHost = nullptr;
 
         for (const auto &host : hosts) {
             if (!host->accommodatesGuest(*guest)) {
@@ -136,14 +136,14 @@ void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd
 
             const double candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
             if (candidateRelSize <= bestRelSize) {
-                bestHost = host;
+                bestHost = host.get();
                 bestRelSize = candidateRelSize;
             }
         }
 
         if (!bestHost) {
-            hosts.emplace_back(std::make_shared<Host>(capacity));
-            bestHost = hosts.back();
+            hosts.emplace_back(std::make_unique<Host>(capacity));
+            bestHost = hosts.back().get();
         }
         bestHost->addGuest(*guestsBegin);
     }
@@ -158,7 +158,7 @@ void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd
 template <typename InstanceT>
 Packing solveByEfficiency(const InstanceT &instance)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
     const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
     proceedByEfficiency(instance.capacity(), guests.begin(), guests.end(), hosts);
@@ -178,34 +178,33 @@ Packing solveByEfficiency(const InstanceT &instance)
  */
 template <ConstPtrIterator<Guest> GuestIt>
 void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
-                                std::vector<std::shared_ptr<Host>> &hosts)
+                                std::vector<std::unique_ptr<Host>> &hosts)
 {
     std::deque unplaced(guestsBegin, guestsEnd);
-    std::unordered_map<const Guest *, std::unordered_set<std::shared_ptr<Host>>>
-        attemptedPlacements;
+    std::unordered_map<const Guest *, std::unordered_set<Host *>> attemptedPlacements;
 
     while (!unplaced.empty()) {
         // Select the best container by relative size
         const auto guest = unplaced.front();
         unplaced.pop_front();
 
-        std::shared_ptr<Host> bestHost = nullptr;
+        Host *bestHost = nullptr;
         double bestRelSize = std::numeric_limits<double>::max();
 
         for (const auto &host : hosts) {
-            if (attemptedPlacements[guest].contains(host)) {
+            if (attemptedPlacements[guest].contains(host.get())) {
                 continue;
             }
             const auto candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
             if (candidateRelSize < bestRelSize) {
-                bestHost = host;
+                bestHost = host.get();
                 bestRelSize = candidateRelSize;
             }
         }
 
         if (!bestHost) {
-            hosts.emplace_back(std::make_shared<Host>(capacity));
-            bestHost = hosts.back();
+            hosts.emplace_back(std::make_unique<Host>(capacity));
+            bestHost = hosts.back().get();
         }
 
         bestHost->addGuest(guest);
@@ -247,7 +246,7 @@ void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt gu
 template <typename InstanceT>
 Packing solveByOverloadAndRemove(const InstanceT &instance)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
     const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
     proceedByOverloadAndRemove(instance.capacity(), guests.begin(), guests.end(), hosts);
@@ -264,7 +263,7 @@ Packing solveByOverloadAndRemove(const InstanceT &instance)
 template <typename InstanceT>
 Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
 
     std::unordered_set<const Guest *> unplaced;
     for (const auto &guest : instance.guests()) {
@@ -274,7 +273,7 @@ Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
     while (!unplaced.empty()) {
         const Guest *largestGuest = nullptr;
         const Guest *bestGuest = nullptr;
-        std::shared_ptr<Host> bestHost;
+        Host *bestHost = nullptr;
 
         double bestScore = std::numeric_limits<double>::lowest();
 
@@ -288,19 +287,19 @@ Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
                     continue;
                 }
                 const double candidateScore =
-                    calculateOpportunityAwareEfficiency(*guest, host, hosts);
+                    calculateOpportunityAwareEfficiency(*guest, *host, hosts);
                 if (candidateScore > bestScore) {
                     bestGuest = guest;
-                    bestHost = host;
+                    bestHost = host.get();
                     bestScore = candidateScore;
                 }
             }
         }
 
         if (!bestGuest) {
-            bestHost = std::make_shared<Host>(instance.capacity());
+            hosts.push_back(std::make_unique<Host>(instance.capacity()));
+            bestHost = hosts.back().get();
             bestGuest = largestGuest;
-            hosts.push_back(bestHost);
         }
         bestHost->addGuest(bestGuest);
         unplaced.erase(bestGuest);
@@ -321,14 +320,14 @@ Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 template <ConstPtrIterator<Guest> GuestIt>
 Packing solveByTree(const Tree &tree,
                     void (*intermediateSolver)(size_t, GuestIt, GuestIt,
-                                               std::vector<std::shared_ptr<Host>> &))
+                                               std::vector<std::unique_ptr<Host>> &))
 {
     using NodeId = Tree::NodeId;
 
     auto workingTree = tree;
     const size_t capacity = tree.capacity();
 
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
 
     while (true) {
         const auto lowerBounds = calculateAllSubtreeLowerBounds(workingTree, capacity);
@@ -343,7 +342,7 @@ Packing solveByTree(const Tree &tree,
             host.addGuests(guests.begin(), guests.end());
             assert(!host.isOverfull());
 
-            hosts.push_back(std::make_shared<Host>(std::move(host)));
+            hosts.push_back(std::make_unique<Host>(std::move(host)));
             break;
         }
 

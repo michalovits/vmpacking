@@ -54,7 +54,7 @@ Packing maximiseByLocalSearch(
     const std::function<Host(const InstanceT &, const std::unordered_map<const Guest *, int> &)>
         &oneHostMaximiser)
 {
-    std::vector<std::shared_ptr<Host>> hosts;
+    std::vector<std::unique_ptr<Host>> hosts;
     std::unordered_map<const Guest *, int> profits;
 
     for (const auto &guest : instance.guests()) {
@@ -76,7 +76,7 @@ Packing maximiseByLocalSearch(
         }
 
         placed += newHost.guests().size();
-        hosts.emplace_back(std::make_shared<Host>(std::move(newHost)));
+        hosts.emplace_back(std::make_unique<Host>(std::move(newHost)));
     }
 
     return Packing(std::move(hosts));

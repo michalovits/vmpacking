@@ -20,11 +20,11 @@ double calculateRelSize(const Guest &guest, const std::unordered_map<int, int> &
 
 double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, int> &pageFreq);
 
-double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared_ptr<Host> &host,
-                                           const std::vector<std::shared_ptr<Host>> &allHosts);
+double calculateOpportunityAwareEfficiency(const Guest &guest, const Host &host,
+                                           const std::vector<std::unique_ptr<Host>> &allHosts);
 
 template <ConstPtrIterator<Guest> GuestIt>
-void decantGuests(std::vector<std::shared_ptr<Host>> &hosts,
+void decantGuests(std::vector<std::unique_ptr<Host>> &hosts,
                   std::vector<std::vector<const Guest *>> (*partitionGuests)(GuestIt, GuestIt))
 {
     for (auto leftIt = hosts.begin(); leftIt != hosts.end(); ++leftIt) {
@@ -63,7 +63,7 @@ std::unordered_map<int, int> calculatePageFrequencies(GuestIt guestsBegin, Guest
     return frequencies;
 }
 
-template <SharedPtrIterator<const Host> HostIt>
+template <UniquePtrIterator<Host> HostIt>
 std::unordered_map<int, int> calculatePageFrequencies(HostIt hostsBegin, HostIt hostsEnd)
 {
     std::unordered_map<int, int> frequencies;
@@ -150,7 +150,7 @@ std::vector<std::vector<const Guest *>> partitionConnectedGuestsTogether(GuestIt
 }
 
 template <ConstPtrIterator<Guest> GuestIt>
-void decantGuestByAllPartitioners(std::vector<std::shared_ptr<Host>> &hosts)
+void decantGuestByAllPartitioners(std::vector<std::unique_ptr<Host>> &hosts)
 {
     decantGuests<GuestIt>(hosts, partitionAllGuestsTogether<GuestIt>);
     decantGuests<GuestIt>(hosts, partitionConnectedGuestsTogether<GuestIt>);

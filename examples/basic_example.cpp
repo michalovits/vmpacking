@@ -59,7 +59,6 @@ int main()
     show(vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByFirstFit));
     show(vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByOverloadAndRemove));
 
-    // Using the general solvers on the tree-shaped instance (ignoring structure)
     show(vmp::solveByOpportunityAwareEfficiency(tree));
     show(vmp::solveByOverloadAndRemove(tree));
 }

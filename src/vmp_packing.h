@@ -42,9 +42,9 @@ inline std::ostream &operator<<(std::ostream &os, const PackingValidity validity
 class Packing
 {
   public:
-    explicit Packing(std::vector<std::shared_ptr<Host>> hosts);
+    explicit Packing(std::vector<std::unique_ptr<Host>> hosts);
 
-    Packing(const Packing &other) noexcept = default;
+    Packing(const Packing &other) = delete;
     Packing(Packing &&other) noexcept = default;
 
     Packing &operator=(Packing &&other) noexcept = default;
@@ -87,15 +87,15 @@ class Packing
 
     void decantGuests();
 
-    void addHost(const std::shared_ptr<Host> &host);
+    void addHost(std::unique_ptr<Host> host);
 
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t hostCount() const;
 
-    [[nodiscard]] std::vector<std::shared_ptr<Host>> &hosts();
+    [[nodiscard]] std::vector<std::unique_ptr<Host>> &hosts();
 
   private:
-    std::vector<std::shared_ptr<Host>> hosts_;
+    std::vector<std::unique_ptr<Host>> hosts_;
     size_t guestCount_;
 };
 

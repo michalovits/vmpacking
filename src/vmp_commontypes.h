@@ -8,8 +8,8 @@ namespace vmp
 {
 
 template <typename It, typename T>
-concept SharedPtrIterator =
-    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, std::shared_ptr<T>>;
+concept UniquePtrIterator =
+    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, std::unique_ptr<T>>;
 
 template <typename It, typename T>
 concept ConstPtrIterator =

@@ -29,14 +29,14 @@ double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, i
     return static_cast<double>(guest.uniquePageCount()) / calculateRelSize(guest, pageFreq);
 }
 
-double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared_ptr<Host> &host,
-                                           const std::vector<std::shared_ptr<Host>> &allHosts)
+double calculateOpportunityAwareEfficiency(const Guest &guest, const Host &host,
+                                           const std::vector<std::unique_ptr<Host>> &allHosts)
 {
-    const size_t pagesOnHost = guest.countUniquePagesOn(*host);
+    const size_t pagesOnHost = guest.countUniquePagesOn(host);
 
     size_t minDifferenceWithOtherHost = std::numeric_limits<size_t>::max();
     for (const auto &otherHost : allHosts) {
-        if (host != otherHost) {
+        if (&host != otherHost.get()) {
             minDifferenceWithOtherHost =
                 std::min(minDifferenceWithOtherHost, otherHost->countPagesNotOn(guest));
         }
