@@ -21,7 +21,7 @@ class Tree
   public:
     using NodeId = size_t;
 
-    [[nodiscard]] std::span<const Guest *const> guests() const;
+    [[nodiscard]] std::span<const Guest> guests() const;
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t capacity() const;
 

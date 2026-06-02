@@ -26,9 +26,9 @@ class TreeBuilder
 
   private:
     size_t capacity_;
-    Tree instance_;
+    Tree tree_;
 
-    // Parallel to instance_.leaves_
+    // Parallel to tree_.leaves_
     std::vector<Guest> guests_;
 };
 

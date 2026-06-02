@@ -16,7 +16,7 @@ ClusterTree::ClusterId ClusterTree::rootCluster()
     return ROOT_CLUSTER;
 }
 
-std::span<const Guest *const> ClusterTree::guests() const
+std::span<const Guest> ClusterTree::guests() const
 {
     return instance_->guests();
 }

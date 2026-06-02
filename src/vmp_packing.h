@@ -75,8 +75,8 @@ class Packing
             }
         }
 
-        const auto isPlaced = [&](const Guest *guest) {
-            return placedGuests.contains(guest);
+        const auto isPlaced = [&](const Guest &guest) {
+            return placedGuests.contains(&guest);
         };
         if (!std::ranges::all_of(instance.guests(), isPlaced)) {
             return PACKING_PARTIAL;

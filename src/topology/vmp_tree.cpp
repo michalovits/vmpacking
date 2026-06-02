@@ -12,7 +12,7 @@ Tree::Tree(std::unordered_set<int> rootPages)
     nodes_[ROOT_NODE] = Node(ROOT_NODE, std::move(rootPages), {});
 }
 
-std::span<const Guest *const> Tree::guests() const
+std::span<const Guest> Tree::guests() const
 {
     return instance_->guests();
 }

@@ -58,7 +58,7 @@ Packing maximiseByLocalSearch(
     std::unordered_map<const Guest *, int> profits;
 
     for (const auto &guest : instance.guests()) {
-        profits[guest] = 1;
+        profits[&guest] = 1;
     }
 
     size_t placed = 0;

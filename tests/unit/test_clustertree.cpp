@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_vector.hpp>
 
 #include <vmp_clustertreebuilder.h>
 
+#include <algorithm>
 #include <unordered_set>
 #include <vector>
 
@@ -167,9 +167,9 @@ TEST_CASE("ClusterTree::guests", "[clustertree]")
     const Guest *g2 = tree.guestOfNode(leaf2);
 
     REQUIRE(tree.guestCount() == 2);
-    const std::vector<const Guest *> guests(tree.guests().begin(), tree.guests().end());
-    CHECK_THAT(guests, Catch::Matchers::VectorContains(static_cast<const Guest *>(g1)));
-    CHECK_THAT(guests, Catch::Matchers::VectorContains(static_cast<const Guest *>(g2)));
+
+    CHECK(std::ranges::any_of(tree.guests(), [g1](const Guest &g) { return &g == g1; }));
+    CHECK(std::ranges::any_of(tree.guests(), [g2](const Guest &g) { return &g == g2; }));
 }
 
 TEST_CASE("ClusterTreeBuilder::createCluster", "[clustertree]")

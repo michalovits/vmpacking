@@ -70,13 +70,11 @@ TEST_CASE("Packing::hosts accessor", "[packing]")
 
 TEST_CASE("Packing::validateForInstance completeness", "[packing]")
 {
-    const auto g1 = Guest({ 1, 2 });
-    const auto g2 = Guest({ 3, 4 });
-
-    const auto instance = vmp::Instance(10, { g1, g2 });
+    const auto instance = vmp::Instance(10, { Guest({ 1, 2 }), Guest({ 3, 4 }) });
 
     auto host = std::make_shared<Host>(10);
-    host->addGuests(instance.guests().begin(), instance.guests().end());
+    host->addGuest(&instance.guests()[0]);
+    host->addGuest(&instance.guests()[1]);
 
     const Packing packing({ host });
 
@@ -85,15 +83,13 @@ TEST_CASE("Packing::validateForInstance completeness", "[packing]")
 
 TEST_CASE("Packing::validateForInstance partial case", "[packing]")
 {
-    const auto g1 = Guest({ 1, 2 });
-    const auto g2 = Guest({ 3, 4 });
-
-    const auto instance = vmp::Instance(10, { g1, g2 });
+    const auto instance = vmp::Instance(10, { Guest({ 1, 2 }), Guest({ 3, 4 }) });
 
     SECTION("complete packing")
     {
         auto host = std::make_shared<Host>(10);
-        host->addGuests(instance.guests().begin(), instance.guests().end());
+        host->addGuest(&instance.guests()[0]);
+        host->addGuest(&instance.guests()[1]);
 
         const Packing packing({ host });
 
@@ -102,7 +98,7 @@ TEST_CASE("Packing::validateForInstance partial case", "[packing]")
     SECTION("partial packing")
     {
         auto host = std::make_shared<Host>(10);
-        host->addGuests(instance.guests().begin(), instance.guests().end() - 1);
+        host->addGuest(&instance.guests()[0]);
 
         const Packing packing({ host });
 
@@ -130,9 +126,9 @@ TEST_CASE("Packing::validateForInstance empty host", "[packing]")
 
     const auto instance = vmp::Instance(10, { guest });
 
-    auto placed = std::make_shared<Host>(10);
-    placed->addGuests(instance.guests().begin(), instance.guests().end());
     auto empty = std::make_shared<Host>(10);
+    auto placed = std::make_shared<Host>(10);
+    placed->addGuest(&guest);
 
     const Packing packing({ placed, empty });
 
@@ -148,7 +144,10 @@ TEST_CASE("Packing::validateForInstance overfull host", "[packing]")
     const auto instance = vmp::Instance(2, { g1, g2, g3 });
 
     auto host = std::make_shared<Host>(2);
-    host->addGuests(instance.guests().begin(), instance.guests().end());
+    host->addGuest(&g1);
+    host->addGuest(&g2);
+    host->addGuest(&g3);
+
     REQUIRE(host->isOverfull());
 
     const Packing packing({ host });

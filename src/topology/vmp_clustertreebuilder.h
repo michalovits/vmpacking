@@ -31,9 +31,9 @@ class ClusterTreeBuilder
     [[nodiscard]] bool allInCluster(const std::vector<NodeId> &nids, ClusterId cid) const;
 
     size_t capacity_;
-    ClusterTree instance_;
+    ClusterTree tree_;
 
-    // Parallel to instance_.leaves_
+    // Parallel to tree.leaves_
     std::vector<Guest> guests_;
 };
 

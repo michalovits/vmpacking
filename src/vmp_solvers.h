@@ -13,6 +13,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
@@ -55,8 +56,8 @@ template <typename InstanceT>
 Packing solveByNextFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
+    const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
-    auto guests = instance.guests();
     proceedByNextFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -101,8 +102,8 @@ template <typename InstanceT>
 Packing solveByFirstFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
+    const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
-    auto guests = instance.guests();
     proceedByFirstFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -158,8 +159,8 @@ template <typename InstanceT>
 Packing solveByEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
+    const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
-    auto guests = instance.guests();
     proceedByEfficiency(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -237,7 +238,8 @@ void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt gu
 }
 
 /**
- * Solves an instance of VM-PACK by "Overload-and-Remove" of Grange, et al. (2021)
+ * Solves an instance of VM-PACK by "Overload-and-Remove" of Grange, et al.
+ * (2021)
  *
  * @param instance the instance to solve
  * @return a valid packing
@@ -246,8 +248,8 @@ template <typename InstanceT>
 Packing solveByOverloadAndRemove(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
+    const auto guests = instance.guests() | std::views::transform([](auto &g) { return &g; });
 
-    auto guests = instance.guests();
     proceedByOverloadAndRemove(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -263,8 +265,11 @@ template <typename InstanceT>
 Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
-    auto guests = instance.guests();
-    std::unordered_set unplaced(guests.begin(), guests.end());
+
+    std::unordered_set<const Guest *> unplaced;
+    for (const auto &guest : instance.guests()) {
+        unplaced.insert(&guest);
+    }
 
     while (!unplaced.empty()) {
         const Guest *largestGuest = nullptr;
@@ -305,10 +310,12 @@ Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 }
 
 /**
- * Solves VM-PACK by the Sinderal, et al. (2011) greedy algorithm on the tree model.
+ * Solves VM-PACK by the Sinderal, et al. (2011) greedy algorithm on the tree
+ * model.
  *
  * @param instance the instance to solve
- * @param intermediateSolver the intermediate solver with which to pack each extracted subtree
+ * @param intermediateSolver the intermediate solver with which to pack each
+ * extracted subtree
  * @return a valid packing
  */
 template <ConstPtrIterator<Guest> GuestIt>
@@ -383,9 +390,10 @@ Packing solveByTree(const Tree &tree,
  *
  * @param instance the instance to solve
  * @param maximiser the n-host maximiser
- * @param allowUnlimitedHosts whether the maximiser will produce a minimal packing when
- * given unlimited allowance
- * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
+ * @param allowUnlimitedHosts whether the maximiser will produce a minimal
+ * packing when given unlimited allowance
+ * @param decantMaximiserOutputs whether to decant the intermediate maximiser
+ * outputs
  * @return a packing into minimum maxHosts
  */
 template <typename InstanceT>
@@ -404,7 +412,8 @@ Packing solveByMaximiser(
         }
     }
     else {
-        // Binary search for the least number of hosts that produces a complete packing
+        // Binary search for the least number of hosts that produces a complete
+        // packing
         size_t minHosts = 1;
         size_t maxHosts = instance.guests().size();
 
@@ -434,14 +443,16 @@ Packing solveByMaximiser(
 }
 
 /**
- * Solves the instance by reduction to the general maximisation problem, then approximate reduction
- * to the one-host maximisation problem, which is approximated by Li, et al. (2009), and in the case
- * where if initialSubsetSize = 1, by Rampersaud & Grosu (2014).
+ * Solves the instance by reduction to the general maximisation problem, then
+ * approximate reduction to the one-host maximisation problem, which is
+ * approximated by Li, et al. (2009), and in the case where if initialSubsetSize
+ * = 1, by Rampersaud & Grosu (2014).
  *
  * @param instance the instance to solve
- * @param initialSubsetSize place guests by computing the efficiency of each possible guest subset
- * of this size
- * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
+ * @param initialSubsetSize place guests by computing the efficiency of each
+ * possible guest subset of this size
+ * @param decantMaximiserOutputs whether to decant the intermediate maximiser
+ * outputs
  * @return a valid packing
  */
 template <typename InstanceT>
@@ -461,12 +472,14 @@ Packing solveByLocalSubsetEfficiency(const InstanceT &instance, const int initia
 }
 
 /**
- * Solves the instance by reduction to the n-host maximisation problem, then approximate reduction
- * to the one-host maximisation problem, which is approximated by the Sinderal, et al. (2011) DP
- * algorithm on the cluster-tree model
+ * Solves the instance by reduction to the n-host maximisation problem, then
+ * approximate reduction to the one-host maximisation problem, which is
+ * approximated by the Sinderal, et al. (2011) DP algorithm on the cluster-tree
+ * model
  *
  * @param tree the cluster tree instance to solve
- * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
+ * @param decantMaximiserOutputs whether to decant the intermediate maximiser
+ * outputs
  * @return a valid packing
  */
 inline Packing solveByLocalClusterTree(const ClusterTree &tree,
