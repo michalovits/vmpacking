@@ -195,7 +195,7 @@ void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt gu
             if (attemptedPlacements[guest].contains(host.get())) {
                 continue;
             }
-            const auto candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
+            const double candidateRelSize = calculateRelSize(*guest, host->pageFrequencies());
             if (candidateRelSize < bestRelSize) {
                 bestHost = host.get();
                 bestRelSize = candidateRelSize;

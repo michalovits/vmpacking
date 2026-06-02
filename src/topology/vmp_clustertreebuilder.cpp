@@ -73,7 +73,7 @@ ClusterTreeBuilder::ClusterId ClusterTreeBuilder::createCluster(const ClusterId 
     auto &clusters = tree_.clusters_;
     const ClusterId cid = clusters.size();
 
-    clusters.emplace_back(parentCid, std::vector<NodeId>());
+    clusters.emplace_back(parentCid, std::vector<NodeId>{});
     clusters[parentCid].children.push_back(cid);
 
     return cid;

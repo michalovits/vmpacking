@@ -31,7 +31,7 @@ void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
                                const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
-        std::unordered_set<int> childPages = childJson[pagesName].get<std::unordered_set<int>>();
+        auto childPages = childJson[pagesName].get<std::unordered_set<int>>();
 
         const size_t child =
             childJson.contains(guestPagesName)

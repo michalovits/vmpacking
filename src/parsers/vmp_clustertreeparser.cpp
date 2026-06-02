@@ -43,7 +43,7 @@ void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const s
     if (clusterJson.contains(nodesName)) {
         for (const auto &nodeJson : clusterJson[nodesName]) {
             auto pages = nodeJson[pagesName].get<std::unordered_set<int>>();
-            auto jsonNodeId = nodeJson[nodeIdName].get<size_t>();
+            const size_t jsonNodeId = nodeJson[nodeIdName].get<size_t>();
             std::vector<size_t> parents;
 
             for (const size_t jsonNodeParent : nodeJson[nodeParentsName].get<std::vector<int>>()) {
