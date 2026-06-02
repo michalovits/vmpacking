@@ -1,23 +1,25 @@
-#ifndef SOLVERS_INSTANCELOADER_H
-#define SOLVERS_INSTANCELOADER_H
+#ifndef VMP_INSTANCEPARSER_H
+#define VMP_INSTANCEPARSER_H
 
-#include <vmp_generaltopology.h>
+#include <vmp_instance.h>
 
+#include <filesystem>
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 namespace vmp
 {
 
-class GeneralParser
+class InstanceParser
 {
   public:
-    explicit GeneralParser(std::string directory, std::string capacityName = "capacity",
-                           std::string guestsName = "guests");
+    explicit InstanceParser(std::string directory, std::string capacityName = "capacity",
+                            std::string guestsName = "guests");
 
-    [[nodiscard]] std::vector<GeneralInstance>
+    [[nodiscard]] std::vector<Instance>
     load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
   private:
@@ -32,4 +34,4 @@ class GeneralParser
 
 }  // namespace vmp
 
-#endif  // SOLVERS_INSTANCELOADER_H
+#endif  // VMP_INSTANCEPARSER_H

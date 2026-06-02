@@ -23,12 +23,12 @@ ClusterTreeParser::ClusterTreeParser(std::string directory, std::string capacity
 {
 }
 
-std::shared_ptr<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
-        return nullptr;
+        return std::nullopt;
     }
-    return std::make_shared<Guest>(
+    return Guest(
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
@@ -52,7 +52,7 @@ void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const s
 
             const size_t node =
                 nodeJson.contains(guestPagesName)
-                    ? builder.addLeafNode(std::move(parents), parseGuest(nodeJson),
+                    ? builder.addLeafNode(std::move(parents), *parseGuest(nodeJson),
                                           std::move(pages))
                     : builder.addInnerNode(cluster, std::move(parents), std::move(pages));
 
@@ -65,11 +65,11 @@ void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const s
     }
 }
 
-std::vector<ClusterTreeInstance> ClusterTreeParser::load(const size_t maxInstances)
+std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
-    std::vector<ClusterTreeInstance> instances;
+    std::vector<ClusterTree> instances;
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {

@@ -1,10 +1,9 @@
-#ifndef SOLVERS_HOST_H
-#define SOLVERS_HOST_H
+#ifndef VMP_HOST_H
+#define VMP_HOST_H
 
 #include <vmp_commontypes.h>
 
 #include <iosfwd>
-#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vmp_guest.h>
@@ -34,7 +33,7 @@ class Host
      * @param guestsEnd the end of the guest range, exclusive
      * @return true if the host is not overfull after adding the guests
      */
-    template <SharedPtrIterator<const Guest> GuestIt>
+    template <ConstPtrIterator<Guest> GuestIt>
     bool accommodatesGuests(GuestIt guestsBegin, GuestIt guestsEnd) const
     {
         return countPagesWithGuests(guestsBegin, guestsEnd) <= capacity_;
@@ -60,12 +59,12 @@ class Host
      * Count the number of *unique* pages this host shares with the range of
      * guests
      *
-     * @tparam GuestIt any iterator type over `std::shared_ptr<const Guest>`
+     * @tparam GuestIt any iterator type over `const Guest *`
      * @param guestsBegin the start of the guest range
      * @param guestsEnd the end of the guest range
      * @return
      */
-    template <SharedPtrIterator<const Guest> GuestIt>
+    template <ConstPtrIterator<Guest> GuestIt>
     [[nodiscard]] size_t countPagesWithGuests(GuestIt guestsBegin, GuestIt guestsEnd) const
     {
         std::unordered_set<int> newPages;
@@ -102,18 +101,18 @@ class Host
     [[nodiscard]] size_t uniquePageCount() const;
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] bool isOverfull() const;
-    [[nodiscard]] bool hasGuest(const std::shared_ptr<const Guest> &guest) const;
+    [[nodiscard]] bool hasGuest(const Guest *guest) const;
 
-    bool addGuest(const std::shared_ptr<const Guest> &guest);
-    bool removeGuest(const std::shared_ptr<const Guest> &guest);
+    bool addGuest(const Guest *guest);
+    bool removeGuest(const Guest *guest);
     void clearGuests();
 
     [[nodiscard]] size_t capacity() const;
-    [[nodiscard]] const std::unordered_set<std::shared_ptr<const Guest>> &guests() const;
+    [[nodiscard]] const std::unordered_set<const Guest *> &guests() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Host &host);
 
-    template <SharedPtrIterator<const Guest> GuestIt>
+    template <ConstPtrIterator<Guest> GuestIt>
     void addGuests(GuestIt guestsBegin, const GuestIt guestsEnd)
     {
         for (; guestsBegin != guestsEnd; ++guestsBegin) {
@@ -127,9 +126,9 @@ class Host
     std::unordered_map<int, int> pageFrequencies_;
 
     const size_t capacity_;
-    std::unordered_set<std::shared_ptr<const Guest>> guests_;
+    std::unordered_set<const Guest *> guests_;
 };
 
 }  // namespace vmp
 
-#endif  // SOLVERS_HOST_H
+#endif  // VMP_HOST_H

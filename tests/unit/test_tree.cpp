@@ -1,33 +1,32 @@
 #include <catch2/catch_test_macros.hpp>
-#include <instance_builders.h>
 #include <vmp_treebuilder.h>
 
+#include <unordered_set>
+#include <vector>
+
 using namespace vmp;
-using vmp::testing::makeGuest;
 
-TEST_CASE("Empty TreeInstance initialisation", "[treeinstance]")
+TEST_CASE("Empty Tree initialisation", "[tree]")
 {
-    const auto instance = TreeBuilder(8, { 7, 8 }).build();
-    const auto &tree = instance.topology();
+    const auto tree = TreeBuilder(8, { 7, 8 }).build();
 
-    CHECK(instance.capacity() == 8);
+    CHECK(tree.capacity() == 8);
 
     CHECK(tree.nodeCount() == 1);  // sentinel/root node
     CHECK(tree.pagesOfNode(tree.rootNode()) == std::unordered_set{ 7, 8 });
-    CHECK(tree.guests().empty());
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).empty());
     CHECK(tree.leafNodes().empty());
     CHECK(tree.isLeafNode(tree.rootNode()));
 }
 
-TEST_CASE("TreeBuilder::addInner", "[treeinstance]")
+TEST_CASE("TreeBuilder::addInner", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
 
     const size_t inner = builder.addInnerNode(root, { 2, 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.nodeCount() == 2);
     CHECK(tree.parentOfNode(inner) == root);
@@ -37,27 +36,25 @@ TEST_CASE("TreeBuilder::addInner", "[treeinstance]")
     CHECK_FALSE(tree.isLeafNode(root));
 }
 
-TEST_CASE("TreeBuilder::addLeaf", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
 
-    const auto g = makeGuest({ 5 });
-    const size_t leaf = builder.addLeafNode(inner, g, { 3 });
+    const size_t leaf = builder.addLeafNode(inner, Guest({ 5 }), { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
+    const Guest *g = tree.guestOfNode(leaf);
     CHECK(tree.leafNodes() == std::vector{ leaf });
-    CHECK(tree.guestOfNode(leaf) == g);
+    CHECK(g->pages == std::unordered_set{ 5 });
     CHECK(tree.guestsOfSubtree(leaf).contains(g));
     CHECK(tree.guestsOfSubtree(inner).contains(g));
     CHECK(tree.guestsOfSubtree(root).contains(g));
-    CHECK(tree.guests().contains(g));
 }
 
-TEST_CASE("TreeBuilder::addInner nested", "[treeinstance]")
+TEST_CASE("TreeBuilder::addInner nested", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
     const auto root = builder.rootNode();
@@ -65,8 +62,7 @@ TEST_CASE("TreeBuilder::addInner nested", "[treeinstance]")
     const size_t innerA = builder.addInnerNode(root, { 2 });
     const size_t innerB = builder.addInnerNode(innerA, { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.nodeCount() == 3);
     CHECK(tree.parentOfNode(innerA) == root);
@@ -76,7 +72,7 @@ TEST_CASE("TreeBuilder::addInner nested", "[treeinstance]")
     CHECK(tree.isLeafNode(innerB));
 }
 
-TEST_CASE("TreeBuilder::addLeaf bookkeeping at ancestors", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf bookkeeping at ancestors", "[tree]")
 {
     //   -- root --
     //   |        |
@@ -92,12 +88,11 @@ TEST_CASE("TreeBuilder::addLeaf bookkeeping at ancestors", "[treeinstance]")
     const size_t innerB = builder.addInnerNode(innerA, { 3 });
     const size_t innerC = builder.addInnerNode(root, { 4 });
 
-    const auto g = makeGuest({ 5 });
-    const size_t leaf = builder.addLeafNode(innerB, g, { 6 });
+    const size_t leaf = builder.addLeafNode(innerB, Guest({ 5 }), { 6 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
+    const Guest *g = tree.guestOfNode(leaf);
     CHECK(tree.guestsOfSubtree(leaf).contains(g));
     CHECK(tree.guestsOfSubtree(innerB).contains(g));
     CHECK(tree.guestsOfSubtree(innerA).contains(g));
@@ -105,30 +100,30 @@ TEST_CASE("TreeBuilder::addLeaf bookkeeping at ancestors", "[treeinstance]")
     CHECK_FALSE(tree.guestsOfSubtree(innerC).contains(g));
 }
 
-TEST_CASE("TreeBuilder::addLeaf accumulates sibling guests at the parent", "[treeinstance]")
+TEST_CASE("TreeBuilder::addLeaf accumulates sibling guests at the parent", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
 
-    const auto g1 = makeGuest({ 10 });
-    const auto g2 = makeGuest({ 20 });
-    const size_t leaf1 = builder.addLeafNode(inner, g1, { 3 });
-    const size_t leaf2 = builder.addLeafNode(inner, g2, { 4 });
+    const size_t leaf1 = builder.addLeafNode(inner, Guest({ 10 }), { 3 });
+    const size_t leaf2 = builder.addLeafNode(inner, Guest({ 20 }), { 4 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
+
+    const Guest *g1 = tree.guestOfNode(leaf1);
+    const Guest *g2 = tree.guestOfNode(leaf2);
 
     CHECK(tree.childrenOfNode(inner) == std::vector{ leaf1, leaf2 });
     CHECK(tree.leafNodes() == std::vector{ leaf1, leaf2 });
     CHECK(tree.guestsOfSubtree(inner).size() == 2);
     CHECK(tree.guestsOfSubtree(inner).contains(g1));
     CHECK(tree.guestsOfSubtree(inner).contains(g2));
-    CHECK(tree.guests().size() == 2);
+    CHECK(tree.guestCount() == 2);
 }
 
-TEST_CASE("TreeTopology::eraseSubtree drops node and guests", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree drops node and guests", "[tree]")
 {
     //   -- root --
     //   |        |
@@ -141,49 +136,49 @@ TEST_CASE("TreeTopology::eraseSubtree drops node and guests", "[treeinstance]")
     const size_t innerA = builder.addInnerNode(root, { 2 });
     const size_t innerB = builder.addInnerNode(root, { 3 });
 
-    const auto guestA = makeGuest({ 10 });
-    const auto guestB = makeGuest({ 20 });
-    builder.addLeafNode(innerA, guestA, { 4 });
-    builder.addLeafNode(innerB, guestB, { 5 });
+    const size_t leafA = builder.addLeafNode(innerA, Guest({ 10 }), { 4 });
+    const size_t leafB = builder.addLeafNode(innerB, Guest({ 20 }), { 5 });
 
-    const auto instance = std::move(builder).build();
-    auto tree = instance.topology();
+    auto tree = std::move(builder).build();
 
-    REQUIRE(tree.guests().size() == 2);
+    const Guest *guestA = tree.guestOfNode(leafA);
+    const Guest *guestB = tree.guestOfNode(leafB);
+
+    REQUIRE(tree.guestsOfSubtree(tree.rootNode()).size() == 2);
 
     tree.eraseSubtree(innerA);
 
-    CHECK(tree.guests().size() == 1);
-    CHECK(tree.guests().contains(guestB));
-    CHECK_FALSE(tree.guests().contains(guestA));
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).size() == 1);
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).contains(guestB));
+    CHECK_FALSE(tree.guestsOfSubtree(tree.rootNode()).contains(guestA));
     CHECK(tree.childrenOfNode(root) == std::vector{ innerB });
 }
 
-TEST_CASE("TreeTopology::eraseSubtree of a leaf", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree of a leaf", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
 
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
 
-    const auto gA = makeGuest({ 10 });
-    const auto gB = makeGuest({ 20 });
-    const size_t leafA = builder.addLeafNode(inner, gA, { 3 });
-    const size_t leafB = builder.addLeafNode(inner, gB, { 4 });
+    const size_t leafA = builder.addLeafNode(inner, Guest({ 10 }), { 3 });
+    const size_t leafB = builder.addLeafNode(inner, Guest({ 20 }), { 4 });
 
-    const auto instance = std::move(builder).build();
-    auto tree = instance.topology();
+    auto tree = std::move(builder).build();
+
+    const Guest *gA = tree.guestOfNode(leafA);
+    const Guest *gB = tree.guestOfNode(leafB);
 
     tree.eraseSubtree(leafA);
 
-    CHECK(tree.guests().size() == 1);
-    CHECK(tree.guests().contains(gB));
-    CHECK_FALSE(tree.guests().contains(gA));
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).size() == 1);
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).contains(gB));
+    CHECK_FALSE(tree.guestsOfSubtree(tree.rootNode()).contains(gA));
     CHECK(tree.guestsOfSubtree(inner).size() == 1);
     CHECK(tree.childrenOfNode(inner) == std::vector{ leafB });
 }
 
-TEST_CASE("TreeTopology::eraseSubtree deep", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree deep", "[tree]")
 {
     //   root
     //     |
@@ -198,20 +193,18 @@ TEST_CASE("TreeTopology::eraseSubtree deep", "[treeinstance]")
     const size_t inner1 = builder.addInnerNode(root, { 2 });
     const size_t inner2 = builder.addInnerNode(inner1, { 3 });
 
-    const auto g = makeGuest({ 99 });
-    builder.addLeafNode(inner2, g, { 4 });
+    builder.addLeafNode(inner2, Guest({ 99 }), { 4 });
 
-    const auto instance = std::move(builder).build();
-    auto tree = instance.topology();
+    auto tree = std::move(builder).build();
 
     tree.eraseSubtree(inner1);
 
-    CHECK(tree.guests().empty());
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).empty());
     CHECK(tree.guestsOfSubtree(root).empty());
     CHECK(tree.childrenOfNode(root).empty());
 }
 
-TEST_CASE("TreeTopology::eraseSubtree repeated", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree repeated", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
 
@@ -219,23 +212,19 @@ TEST_CASE("TreeTopology::eraseSubtree repeated", "[treeinstance]")
     const size_t innerA = builder.addInnerNode(root, { 2 });
     const size_t innerB = builder.addInnerNode(root, { 3 });
 
-    const auto gA = makeGuest({ 10 });
-    const auto gB = makeGuest({ 20 });
+    builder.addLeafNode(innerA, Guest({ 10 }), { 4 });
+    builder.addLeafNode(innerB, Guest({ 20 }), { 5 });
 
-    builder.addLeafNode(innerA, gA, { 4 });
-    builder.addLeafNode(innerB, gB, { 5 });
-
-    const auto instance = std::move(builder).build();
-    auto tree = instance.topology();
+    auto tree = std::move(builder).build();
 
     tree.eraseSubtree(innerA);
     tree.eraseSubtree(innerB);
 
-    CHECK(tree.guests().empty());
+    CHECK(tree.guestsOfSubtree(tree.rootNode()).empty());
     CHECK(tree.childrenOfNode(root).empty());
 }
 
-TEST_CASE("TreeTopology::eraseSubtree preserves page sharing", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree preserves page sharing", "[tree]")
 {
     // after dropping leafA, the walk up from leafB should reconstruct its page set correctly
     TreeBuilder builder(8, { 1 });
@@ -243,14 +232,12 @@ TEST_CASE("TreeTopology::eraseSubtree preserves page sharing", "[treeinstance]")
     const auto root = builder.rootNode();
     const size_t inner = builder.addInnerNode(root, { 2 });
 
-    const auto gA = makeGuest({ 1, 2, 3 });
-    const auto gB = makeGuest({ 1, 2, 4 });
+    const size_t leafA = builder.addLeafNode(inner, Guest({ 1, 2, 3 }), { 3 });
+    const size_t leafB = builder.addLeafNode(inner, Guest({ 1, 2, 4 }), { 4 });
 
-    const size_t leafA = builder.addLeafNode(inner, gA, { 3 });
-    const size_t leafB = builder.addLeafNode(inner, gB, { 4 });
+    auto tree = std::move(builder).build();
 
-    const auto instance = std::move(builder).build();
-    auto tree = instance.topology();
+    const Guest *gB = tree.guestOfNode(leafB);
 
     tree.eraseSubtree(leafA);
 
@@ -266,20 +253,19 @@ TEST_CASE("TreeTopology::eraseSubtree preserves page sharing", "[treeinstance]")
     CHECK(pathPages == gB->pages);
 }
 
-TEST_CASE("TreeTopology::eraseSubtree does not affect copies", "[treeinstance]")
+TEST_CASE("Tree::eraseSubtree does not affect copies", "[tree]")
 {
     TreeBuilder builder(8, { 1 });
 
     const size_t inner = builder.addInnerNode(builder.rootNode(), { 2 });
-    const auto g = makeGuest({ 3 });
-
-    builder.addLeafNode(inner, g, { 4 });
+    const size_t leaf = builder.addLeafNode(inner, Guest({ 3 }), { 4 });
 
     const auto original = std::move(builder).build();
+    const Guest *g = original.guestOfNode(leaf);
 
-    auto workingTree = original.topology();
+    auto workingTree = original;
     workingTree.eraseSubtree(inner);
 
-    CHECK(workingTree.guests().empty());
-    CHECK(original.topology().guests().contains(g));
+    CHECK(workingTree.guestsOfSubtree(workingTree.rootNode()).empty());
+    CHECK(original.guestsOfSubtree(original.rootNode()).contains(g));
 }

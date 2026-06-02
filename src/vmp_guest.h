@@ -1,5 +1,5 @@
-#ifndef SOLVERS_GUEST_H
-#define SOLVERS_GUEST_H
+#ifndef VMP_GUEST_H
+#define VMP_GUEST_H
 
 #include <iosfwd>
 #include <unordered_set>
@@ -24,4 +24,4 @@ class Guest
 
 }  // namespace vmp
 
-#endif  // SOLVERS_GUEST_H
+#endif  // VMP_GUEST_H

@@ -1,4 +1,4 @@
-#include <vmp_generalparser.h>
+#include <vmp_instanceparser.h>
 
 #include <filesystem>
 #include <fstream>
@@ -9,26 +9,27 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-GeneralParser::GeneralParser(std::string directory, std::string capacityName,
-                             std::string guestsName)
+InstanceParser::InstanceParser(std::string directory, std::string capacityName,
+                               std::string guestsName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
       guestsName(std::move(guestsName))
 {
 }
 
-static std::vector<GeneralInstance>
+static std::vector<Instance>
 makeInstances(const std::vector<int> &capacityData,
               const std::vector<std::vector<std::vector<int>>> &guestData)
 {
     assert(capacityData.size() == guestData.size());
 
-    std::vector<GeneralInstance> instances;
+    std::vector<Instance> instances;
     for (size_t i = 0; i < capacityData.size(); ++i) {
-        std::vector<std::shared_ptr<const Guest>> guests;
+        std::vector<Guest> guests;
+        guests.reserve(guestData[i].size());
+
         for (const auto &guestPages : guestData[i]) {
-            guests.push_back(
-                std::make_shared<Guest>(std::unordered_set(guestPages.begin(), guestPages.end())));
+            guests.emplace_back(std::unordered_set(guestPages.begin(), guestPages.end()));
         }
         instances.emplace_back(capacityData[i], std::move(guests));
     }
@@ -36,11 +37,11 @@ makeInstances(const std::vector<int> &capacityData,
     return instances;
 }
 
-std::vector<GeneralInstance> GeneralParser::load(const size_t maxInstances)
+std::vector<Instance> InstanceParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
-    std::vector<GeneralInstance> instances;
+    std::vector<Instance> instances;
     std::vector<int> capacityData;
     std::vector<std::vector<std::vector<int>>> guestData;
 

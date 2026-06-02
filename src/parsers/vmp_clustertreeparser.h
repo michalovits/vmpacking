@@ -1,10 +1,11 @@
-#ifndef VMP_CLUSTERTREEINSTANCELOADER_H
-#define VMP_CLUSTERTREEINSTANCELOADER_H
+#ifndef VMP_CLUSTERTREEPARSER_H
+#define VMP_CLUSTERTREEPARSER_H
 
 #include <vmp_clustertreebuilder.h>
 
 #include <limits>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -22,7 +23,7 @@ class ClusterTreeParser
                                std::string clusterChildrenName = "cluster_children");
 
     [[nodiscard]]
-    std::vector<ClusterTreeInstance> load(size_t maxInstances = std::numeric_limits<size_t>::max());
+    std::vector<ClusterTree> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
   private:
     const std::string directory;
@@ -38,7 +39,7 @@ class ClusterTreeParser
     std::set<std::filesystem::path> paths;
     std::unordered_map<std::filesystem::path, size_t> processedInstances;
 
-    [[nodiscard]] std::shared_ptr<Guest> parseGuest(const nlohmann::json &nodeJson) const;
+    [[nodiscard]] std::optional<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 
     void parseClusterSubtree(ClusterTreeBuilder &builder, size_t parentCluster,
                              const nlohmann::json &clusterJson,
@@ -48,4 +49,4 @@ class ClusterTreeParser
 
 };  // namespace vmp
 
-#endif  // VMP_TREEINSTANCELOADER_H
+#endif  // VMP_TREEPARSER_H

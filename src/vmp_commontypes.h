@@ -11,6 +11,10 @@ template <typename It, typename T>
 concept SharedPtrIterator =
     std::input_iterator<It> && std::same_as<std::iter_value_t<It>, std::shared_ptr<T>>;
 
+template <typename It, typename T>
+concept ConstPtrIterator =
+    std::input_iterator<It> && std::same_as<std::iter_value_t<It>, const T *>;
+
 }  // namespace vmp
 
 #endif  // VMP_ITERATORS_H

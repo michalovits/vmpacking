@@ -11,7 +11,7 @@
 #include <vmp_commontypes.h>
 #include <vmp_guest.h>
 #include <vmp_host.h>
-#include <vmp_treetopology.h>
+#include <vmp_tree.h>
 
 namespace vmp
 {
@@ -23,10 +23,9 @@ double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, i
 double calculateOpportunityAwareEfficiency(const Guest &guest, const std::shared_ptr<Host> &host,
                                            const std::vector<std::shared_ptr<Host>> &allHosts);
 
-template <SharedPtrIterator<const Guest> GuestIt>
-void decantGuests(
-    std::vector<std::shared_ptr<Host>> &hosts,
-    std::vector<std::vector<std::shared_ptr<const Guest>>> (*partitionGuests)(GuestIt, GuestIt))
+template <ConstPtrIterator<Guest> GuestIt>
+void decantGuests(std::vector<std::shared_ptr<Host>> &hosts,
+                  std::vector<std::vector<const Guest *>> (*partitionGuests)(GuestIt, GuestIt))
 {
     for (auto leftIt = hosts.begin(); leftIt != hosts.end(); ++leftIt) {
         const auto &leftHost = *leftIt;
@@ -52,7 +51,7 @@ void decantGuests(
     std::erase_if(hosts, [](const auto &host) { return host->guests().empty(); });
 }
 
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 std::unordered_map<int, int> calculatePageFrequencies(GuestIt guestsBegin, GuestIt guestsEnd)
 {
     std::unordered_map<int, int> frequencies;
@@ -78,24 +77,24 @@ std::unordered_map<int, int> calculatePageFrequencies(HostIt hostsBegin, HostIt 
     return frequencies;
 }
 
-template <SharedPtrIterator<const Guest> GuestIt>
-std::vector<std::vector<std::shared_ptr<const Guest>>>
-partitionAllGuestsTogether(GuestIt guestsBegin, GuestIt guestsEnd)
+template <ConstPtrIterator<Guest> GuestIt>
+std::vector<std::vector<const Guest *>> partitionAllGuestsTogether(GuestIt guestsBegin,
+                                                                   GuestIt guestsEnd)
 {
     // Whole-page decanting
-    std::vector<std::shared_ptr<const Guest>> allGuests;
+    std::vector<const Guest *> allGuests;
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         allGuests.push_back(*guestsBegin);
     }
     return { allGuests };
 }
 
-template <SharedPtrIterator<const Guest> GuestIt>
-std::vector<std::vector<std::shared_ptr<const Guest>>>
-partitionGuestsIndividually(GuestIt guestsBegin, GuestIt guestsEnd)
+template <ConstPtrIterator<Guest> GuestIt>
+std::vector<std::vector<const Guest *>> partitionGuestsIndividually(GuestIt guestsBegin,
+                                                                    GuestIt guestsEnd)
 {
     // Per-guest decanting
-    std::vector<std::vector<std::shared_ptr<const Guest>>> partition;
+    std::vector<std::vector<const Guest *>> partition;
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         partition.push_back(std::vector{ *guestsBegin });
     }
@@ -111,20 +110,20 @@ inline bool guestsHaveSharedPage(const Guest &guest1, const Guest &guest2)
                                [&](const auto &page) { return larger.contains(page); });
 }
 
-template <SharedPtrIterator<const Guest> GuestIt>
-std::vector<std::vector<std::shared_ptr<const Guest>>>
-partitionConnectedGuestsTogether(GuestIt guestsBegin, GuestIt guestsEnd)
+template <ConstPtrIterator<Guest> GuestIt>
+std::vector<std::vector<const Guest *>> partitionConnectedGuestsTogether(GuestIt guestsBegin,
+                                                                         GuestIt guestsEnd)
 {
-    std::vector<std::vector<std::shared_ptr<const Guest>>> result;
-    std::unordered_set<std::shared_ptr<const Guest>> guestsVisited;
+    std::vector<std::vector<const Guest *>> result;
+    std::unordered_set<const Guest *> guestsVisited;
 
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
         if (guestsVisited.contains(*guestsBegin)) {
             continue;
         }
 
-        std::vector<std::shared_ptr<const Guest>> component;
-        std::queue<std::shared_ptr<const Guest>> guestsToVisit;
+        std::vector<const Guest *> component;
+        std::queue<const Guest *> guestsToVisit;
         guestsToVisit.push(*guestsBegin);
 
         while (!guestsToVisit.empty()) {
@@ -150,7 +149,7 @@ partitionConnectedGuestsTogether(GuestIt guestsBegin, GuestIt guestsEnd)
     return result;
 }
 
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 void decantGuestByAllPartitioners(std::vector<std::shared_ptr<Host>> &hosts)
 {
     decantGuests<GuestIt>(hosts, partitionAllGuestsTogether<GuestIt>);
@@ -166,8 +165,8 @@ struct TreeLowerBounds
     TreeLowerBounds(const size_t size, const size_t count) : size(size), count(count) {}
 };
 
-std::unordered_map<size_t, TreeLowerBounds> calculateAllSubtreeLowerBounds(const TreeTopology &tree,
-                                                                           const size_t capacity);
+std::unordered_map<Tree::NodeId, TreeLowerBounds>
+calculateAllSubtreeLowerBounds(const Tree &tree, const size_t capacity);
 
 }  // namespace vmp
 

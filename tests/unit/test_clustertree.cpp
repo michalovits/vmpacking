@@ -1,18 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 
-#include <instance_builders.h>
 #include <vmp_clustertreebuilder.h>
 
+#include <unordered_set>
+#include <vector>
+
 using namespace vmp;
-using vmp::testing::makeGuest;
 
-TEST_CASE("ClusterTreeInstance initialisation", "[clustertreeinstance]")
+TEST_CASE("ClusterTree initialisation", "[clustertree]")
 {
-    const auto instance = ClusterTreeBuilder(8).build();
-    const auto &tree = instance.topology();
+    const auto tree = ClusterTreeBuilder(8).build();
 
-    CHECK(instance.capacity() == 8);
+    CHECK(tree.capacity() == 8);
 
     CHECK(tree.nodeCount() == 0);
     CHECK(tree.clusterCount() == 1);
@@ -20,15 +20,14 @@ TEST_CASE("ClusterTreeInstance initialisation", "[clustertreeinstance]")
     CHECK(tree.nodesOfCluster(tree.rootCluster()).empty());
 }
 
-TEST_CASE("ClusterTreeBuilder::addInner", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t node = builder.addInnerNode(root, {}, { 1, 2 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.nodeCount() == 1);
     CHECK(tree.nodeCountOfCluster(root) == 1);
@@ -39,20 +38,18 @@ TEST_CASE("ClusterTreeBuilder::addInner", "[clustertreeinstance]")
     CHECK_FALSE(tree.isLeafNode(node));
 }
 
-TEST_CASE("ClusterTreeBuilder::addLeaf", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addLeaf", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parentNode = builder.addInnerNode(root, {}, { 1 });
 
-    const auto g = makeGuest({ 5 });
-    const size_t leaf = builder.addLeafNode({ parentNode }, g, { 5 });
+    const size_t leaf = builder.addLeafNode({ parentNode }, Guest({ 5 }), { 5 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.isLeafNode(leaf));
-    CHECK(tree.guestOfNode(leaf) == g);
+    CHECK(tree.guestOfNode(leaf)->pages == std::unordered_set{ 5 });
     CHECK(tree.leafNodes() == std::vector{ leaf });
     CHECK(tree.parentsOfNode(leaf) == std::vector{ parentNode });
     CHECK(tree.childrenOfNode(parentNode) == std::vector{ leaf });
@@ -64,7 +61,7 @@ TEST_CASE("ClusterTreeBuilder::addLeaf", "[clustertreeinstance]")
     CHECK(tree.isLeafCluster(leafCluster));
 }
 
-TEST_CASE("ClusterTreeBuilder::addInner multi-parent", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner multi-parent", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
@@ -74,8 +71,7 @@ TEST_CASE("ClusterTreeBuilder::addInner multi-parent", "[clustertreeinstance]")
     const size_t childCluster = builder.createCluster(root);
     const size_t child = builder.addInnerNode(childCluster, { parentA, parentB }, { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.parentsOfNode(child) == std::vector{ parentA, parentB });
     CHECK(tree.childrenOfNode(parentA) == std::vector{ child });
@@ -85,18 +81,16 @@ TEST_CASE("ClusterTreeBuilder::addInner multi-parent", "[clustertreeinstance]")
     CHECK_FALSE(tree.isLeafNode(child));
 }
 
-TEST_CASE("ClusterTreeBuilder::addLeaf multi-parent", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addLeaf multi-parent", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parentA = builder.addInnerNode(root, {}, { 1 });
     const size_t parentB = builder.addInnerNode(root, {}, { 2 });
 
-    const auto g = makeGuest({ 5 });
-    const size_t leaf = builder.addLeafNode({ parentA, parentB }, g, { 3 });
+    const size_t leaf = builder.addLeafNode({ parentA, parentB }, Guest({ 5 }), { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.parentsOfNode(leaf) == std::vector{ parentA, parentB });
     CHECK(tree.childrenOfNode(parentA) == std::vector{ leaf });
@@ -111,21 +105,16 @@ TEST_CASE("ClusterTreeBuilder::addLeaf multi-parent", "[clustertreeinstance]")
     CHECK(tree.isLeafCluster(leafCluster));
 }
 
-TEST_CASE("ClusterTreeBuilder::addLeaf gives each sibling leaf its own cluster",
-          "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addLeaf gives each sibling leaf its own cluster", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
     const size_t root = builder.rootCluster();
     const size_t parent = builder.addInnerNode(root, {}, { 1 });
 
-    const auto g1 = makeGuest({ 2 });
-    const auto g2 = makeGuest({ 3 });
+    const size_t leaf1 = builder.addLeafNode({ parent }, Guest({ 2 }), { 2 });
+    const size_t leaf2 = builder.addLeafNode({ parent }, Guest({ 3 }), { 3 });
 
-    const size_t leaf1 = builder.addLeafNode({ parent }, g1, { 2 });
-    const size_t leaf2 = builder.addLeafNode({ parent }, g2, { 3 });
-
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     REQUIRE(tree.clusterCount() == 3);
 
@@ -136,7 +125,7 @@ TEST_CASE("ClusterTreeBuilder::addLeaf gives each sibling leaf its own cluster",
     CHECK(tree.isLeafNode(leaf2));
 }
 
-TEST_CASE("ClusterTreeBuilder::addInner deep", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::addInner deep", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
     const size_t rootCluster = builder.rootCluster();
@@ -148,8 +137,7 @@ TEST_CASE("ClusterTreeBuilder::addInner deep", "[clustertreeinstance]")
     const size_t grandchildCluster = builder.createCluster(childCluster);
     const size_t innerC = builder.addInnerNode(grandchildCluster, { innerB }, { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.clusterCount() == 3);
 
@@ -163,35 +151,35 @@ TEST_CASE("ClusterTreeBuilder::addInner deep", "[clustertreeinstance]")
     CHECK(tree.childrenOfNode(innerB) == std::vector{ innerC });
 }
 
-TEST_CASE("ClusterTreeTopology::guests", "[clustertreeinstance]")
+TEST_CASE("ClusterTree::guests", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t parent = builder.addInnerNode(root, {}, { 1 });
 
-    const auto g1 = makeGuest({ 2 });
-    const auto g2 = makeGuest({ 3 });
-    builder.addLeafNode({ parent }, g1, { 2 });
-    builder.addLeafNode({ parent }, g2, { 3 });
+    const size_t leaf1 = builder.addLeafNode({ parent }, Guest({ 2 }), { 2 });
+    const size_t leaf2 = builder.addLeafNode({ parent }, Guest({ 3 }), { 3 });
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
+
+    const Guest *g1 = tree.guestOfNode(leaf1);
+    const Guest *g2 = tree.guestOfNode(leaf2);
 
     REQUIRE(tree.guestCount() == 2);
-    CHECK_THAT(tree.guests(), Catch::Matchers::VectorContains(g1));
-    CHECK_THAT(tree.guests(), Catch::Matchers::VectorContains(g2));
+    const std::vector<const Guest *> guests(tree.guests().begin(), tree.guests().end());
+    CHECK_THAT(guests, Catch::Matchers::VectorContains(static_cast<const Guest *>(g1)));
+    CHECK_THAT(guests, Catch::Matchers::VectorContains(static_cast<const Guest *>(g2)));
 }
 
-TEST_CASE("ClusterTreeBuilder::createCluster", "[clustertreeinstance]")
+TEST_CASE("ClusterTreeBuilder::createCluster", "[clustertree]")
 {
     ClusterTreeBuilder builder(8);
 
     const size_t root = builder.rootCluster();
     const size_t child = builder.createCluster(root);
 
-    const auto instance = std::move(builder).build();
-    const auto &tree = instance.topology();
+    const auto tree = std::move(builder).build();
 
     CHECK(tree.clusterCount() == 2);
     CHECK(tree.parentOfCluster(child) == root);

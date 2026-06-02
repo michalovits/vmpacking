@@ -8,7 +8,7 @@ namespace vmp
 
 Host::Host(const size_t capacity) : capacity_(capacity) {}
 
-bool Host::addGuest(const std::shared_ptr<const Guest> &guest)
+bool Host::addGuest(const Guest *guest)
 {
     for (const int page : guest->pages) {
         ++pageFrequencies_[page];
@@ -18,7 +18,7 @@ bool Host::addGuest(const std::shared_ptr<const Guest> &guest)
     return isOverfull();
 }
 
-bool Host::removeGuest(const std::shared_ptr<const Guest> &guest)
+bool Host::removeGuest(const Guest *guest)
 {
     for (const int page : guest->pages) {
         if (--pageFrequencies_[page] == 0) {
@@ -42,7 +42,7 @@ size_t Host::capacity() const
     return capacity_;
 }
 
-const std::unordered_set<std::shared_ptr<const Guest>> &Host::guests() const
+const std::unordered_set<const Guest *> &Host::guests() const
 {
     return guests_;
 }
@@ -87,7 +87,7 @@ bool Host::isOverfull() const
     return pageFrequencies_.size() > capacity_;
 }
 
-bool Host::hasGuest(const std::shared_ptr<const Guest> &guest) const
+bool Host::hasGuest(const Guest *guest) const
 {
     return guests_.contains(guest);
 }

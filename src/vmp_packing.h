@@ -1,5 +1,5 @@
-#ifndef SOLVERS_PACKING_H
-#define SOLVERS_PACKING_H
+#ifndef VMP_PACKING_H
+#define VMP_PACKING_H
 
 #include <vmp_host.h>
 
@@ -61,7 +61,7 @@ class Packing
     template <typename InstanceT>
     PackingValidity validateForInstance(const InstanceT &instance) const
     {
-        std::unordered_set<std::shared_ptr<const Guest>> placedGuests;
+        std::unordered_set<const Guest *> placedGuests;
 
         for (const auto &host : hosts_) {
             if (host->guests().empty()) {
@@ -70,16 +70,15 @@ class Packing
             if (host->isOverfull()) {
                 return PACKING_HOST_OVERFULL;
             }
-            for (const auto &guest : host->guests()) {
+            for (const Guest *guest : host->guests()) {
                 placedGuests.insert(guest);
             }
         }
 
-        const auto &guests = instance.guests();
-        const auto isPlaced = [&](const auto &guest) {
+        const auto isPlaced = [&](const Guest *guest) {
             return placedGuests.contains(guest);
         };
-        if (!std::ranges::all_of(guests, isPlaced)) {
+        if (!std::ranges::all_of(instance.guests(), isPlaced)) {
             return PACKING_PARTIAL;
         }
 
@@ -101,4 +100,4 @@ class Packing
 };
 
 }  // namespace vmp
-#endif  // SOLVERS_PACKING_H
+#endif  // VMP_PACKING_H

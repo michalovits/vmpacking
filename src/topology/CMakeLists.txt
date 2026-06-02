@@ -1,8 +1,8 @@
 target_sources(vmp PRIVATE
-        vmp_generaltopology.cpp
-        vmp_clustertreetopology.cpp
+        vmp_clustertree.cpp
         vmp_clustertreebuilder.cpp
-        vmp_treetopology.cpp
+        vmp_instance.cpp
+        vmp_tree.cpp
         vmp_treebuilder.cpp
 )
 

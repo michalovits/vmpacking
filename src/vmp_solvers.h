@@ -1,6 +1,8 @@
 #ifndef VMP_SOLVERS_H
 #define VMP_SOLVERS_H
 
+#include <vmp_clustertree.h>
+#include <vmp_maximisers.h>
 #include <vmp_packing.h>
 #include <vmp_solverutils.h>
 
@@ -24,13 +26,13 @@ namespace vmp
  * Packs `[guestsBegin, guestsEnd)` sequentially by Next Fit, modifying a
  * partial hosts vector
  *
- * @tparam GuestIt any iterator type over `std::shared_ptr<const Guest>`
+ * @tparam GuestIt any iterator type over `const Guest *`
  * @param capacity the fixed bin capacity
  * @param guestsBegin the start of guest range
  * @param guestsEnd the end of guest range
  * @param hosts the partial hosts vector to use
  */
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 void proceedByNextFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
                       std::vector<std::shared_ptr<Host>> &hosts)
 {
@@ -54,7 +56,7 @@ Packing solveByNextFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.guests();
+    auto guests = instance.guests();
     proceedByNextFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -64,13 +66,13 @@ Packing solveByNextFit(const InstanceT &instance)
  * Packs `[guestsBegin, guestsEnd)` sequentially by First Fit, modifying a
  * partial hosts vector
  *
- * @tparam GuestIt any iterator type over `std::shared_ptr<const Guest>`
+ * @tparam GuestIt any iterator type over `const Guest *`
  * @param capacity the fixed bin capacity
  * @param guestsBegin the start of guest range
  * @param guestsEnd the end of guest range
  * @param hosts the partial hosts vector to use
  */
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 void proceedByFirstFit(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
                        std::vector<std::shared_ptr<Host>> &hosts)
 {
@@ -100,7 +102,7 @@ Packing solveByFirstFit(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.guests();
+    auto guests = instance.guests();
     proceedByFirstFit(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -110,13 +112,13 @@ Packing solveByFirstFit(const InstanceT &instance)
  * Packs `[guestsBegin, guestsEnd)` sequentially by "Best Fusion" of Grange, et
  * al. (2021), modifying a partial hosts vector
  *
- * @tparam GuestIt any iterator type over `std::shared_ptr<const Guest>`
+ * @tparam GuestIt any iterator type over `const Guest *`
  * @param capacity the fixed bin capacity
  * @param guestsBegin the start of guest range
  * @param guestsEnd the end of guest range
  * @param hosts the partial hosts vector to use
  */
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 void proceedByEfficiency(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
                          std::vector<std::shared_ptr<Host>> &hosts)
 {
@@ -157,7 +159,7 @@ Packing solveByEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.guests();
+    auto guests = instance.guests();
     proceedByEfficiency(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -167,18 +169,18 @@ Packing solveByEfficiency(const InstanceT &instance)
  * Packs `[guestsBegin, guestsEnd)` sequentially by "Overload-and-Remove" of
  * Grange, et al. (2021), modifying a partial hosts vector
  *
- * @tparam GuestIt any iterator type over `std::shared_ptr<const Guest>`
+ * @tparam GuestIt any iterator type over `const Guest *`
  * @param capacity the fixed bin capacity
  * @param guestsBegin the start of guest range
  * @param guestsEnd the end of guest range
  * @param hosts the partial hosts vector to use
  */
-template <SharedPtrIterator<const Guest> GuestIt>
+template <ConstPtrIterator<Guest> GuestIt>
 void proceedByOverloadAndRemove(size_t capacity, GuestIt guestsBegin, GuestIt guestsEnd,
                                 std::vector<std::shared_ptr<Host>> &hosts)
 {
     std::deque unplaced(guestsBegin, guestsEnd);
-    std::unordered_map<std::shared_ptr<const Guest>, std::unordered_set<std::shared_ptr<Host>>>
+    std::unordered_map<const Guest *, std::unordered_set<std::shared_ptr<Host>>>
         attemptedPlacements;
 
     while (!unplaced.empty()) {
@@ -245,7 +247,7 @@ Packing solveByOverloadAndRemove(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
 
-    const auto &guests = instance.guests();
+    auto guests = instance.guests();
     proceedByOverloadAndRemove(instance.capacity(), guests.begin(), guests.end(), hosts);
 
     return Packing(std::move(hosts));
@@ -261,12 +263,12 @@ template <typename InstanceT>
 Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
 {
     std::vector<std::shared_ptr<Host>> hosts;
-    const auto &guests = instance.guests();
+    auto guests = instance.guests();
     std::unordered_set unplaced(guests.begin(), guests.end());
 
     while (!unplaced.empty()) {
-        std::shared_ptr<const Guest> largestGuest;
-        std::shared_ptr<const Guest> bestGuest;
+        const Guest *largestGuest = nullptr;
+        const Guest *bestGuest = nullptr;
         std::shared_ptr<Host> bestHost;
 
         double bestScore = std::numeric_limits<double>::lowest();
@@ -309,13 +311,15 @@ Packing solveByOpportunityAwareEfficiency(const InstanceT &instance)
  * @param intermediateSolver the intermediate solver with which to pack each extracted subtree
  * @return a valid packing
  */
-template <SharedPtrIterator<const Guest> GuestIt>
-Packing solveByTree(const TreeInstance &instance,
+template <ConstPtrIterator<Guest> GuestIt>
+Packing solveByTree(const Tree &tree,
                     void (*intermediateSolver)(size_t, GuestIt, GuestIt,
                                                std::vector<std::shared_ptr<Host>> &))
 {
-    auto workingTree = instance.topology();
-    const size_t capacity = instance.capacity();
+    using NodeId = Tree::NodeId;
+
+    auto workingTree = tree;
+    const size_t capacity = tree.capacity();
 
     std::vector<std::shared_ptr<Host>> hosts;
 
@@ -323,7 +327,7 @@ Packing solveByTree(const TreeInstance &instance,
         const auto lowerBounds = calculateAllSubtreeLowerBounds(workingTree, capacity);
 
         if (lowerBounds.at(workingTree.rootNode()).count == 1) {
-            const auto &guests = workingTree.guests();
+            const auto &guests = workingTree.guestsOfSubtree(workingTree.rootNode());
             if (guests.empty()) {
                 break;
             }
@@ -336,96 +340,41 @@ Packing solveByTree(const TreeInstance &instance,
             break;
         }
 
-        size_t minNode = std::numeric_limits<size_t>::max();
+        NodeId minNid = std::numeric_limits<NodeId>::max();
         size_t minNodeCount = std::numeric_limits<size_t>::max();
 
-        for (const auto &[node, bounds] : lowerBounds) {
+        for (const auto &[nid, bounds] : lowerBounds) {
             if (bounds.count <= 1) {
                 continue;
             }
 
-            const auto &children = workingTree.childrenOfNode(node);
+            const auto &children = workingTree.childrenOfNode(nid);
 
-            if (!std::ranges::all_of(children, [&](const size_t child) {
+            if (!std::ranges::all_of(children, [&](const NodeId child) {
                     return lowerBounds.at(child).count <= 1;
                 })) {
                 continue;
             }
 
-            if (minNode == std::numeric_limits<size_t>::max() || bounds.count < minNodeCount) {
-                minNode = node;
+            if (minNid == std::numeric_limits<NodeId>::max() || bounds.count < minNodeCount) {
+                minNid = nid;
                 minNodeCount = bounds.count;
             }
         }
 
-        assert(minNode != std::numeric_limits<size_t>::max());
+        assert(minNid != std::numeric_limits<NodeId>::max());
 
-        const auto &guestsToPack = workingTree.guestsOfSubtree(minNode);
+        const auto &guestsToPack = workingTree.guestsOfSubtree(minNid);
         intermediateSolver(capacity, guestsToPack.begin(), guestsToPack.end(), hosts);
 
-        if (minNode == workingTree.rootNode()) {
+        if (minNid == workingTree.rootNode()) {
             break;
         }
 
-        workingTree.eraseSubtree(minNode);
+        workingTree.eraseSubtree(minNid);
     }
 
     return Packing(std::move(hosts));
-}
-
-/**
- * Solves the instance by reduction to the general maximisation problem, then approximate reduction
- * to the one-host maximisation problem, which is approximated by Li, et al. (2009), and in the case
- * where if initialSubsetSize = 1, by Rampersaud & Grosu (2014).
- *
- * @param instance the instance to solve
- * @param initialSubsetSize place guests by computing the efficiency of each possible guest subset
- * of this size
- * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
- * @return a valid packing
- */
-template <typename InstanceT>
-Packing solveByLocalSubsetEfficiency(const InstanceT &instance, const int initialSubsetSize,
-                                     const bool decantMaximiserOutputs = true)
-{
-    auto oneHostMaximiser =
-        [&](const InstanceT &inst,
-            const std::unordered_map<std::shared_ptr<const Guest>, int> &profits) {
-            return maximiseOneHostBySubsetEfficiency(inst, profits, initialSubsetSize);
-        };
-
-    auto nHostMaximiser = [&](const InstanceT &inst, const size_t maxHosts) {
-        return maximiseByLocalSearch<InstanceT>(inst, maxHosts, oneHostMaximiser);
-    };
-
-    return solveByMaximiser<InstanceT>(instance, nHostMaximiser, true, decantMaximiserOutputs);
-}
-
-/**
- * Solves the instance by reduction to the n-host maximisation problem, then approximate reduction
- * to the one-host maximisation problem, which is approximated by the Sinderal, et al. (2011) DP
- * algorithm on the cluster-tree model
- *
- * @param instance the instance to solve
- * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
- * @return a valid packing
- */
-template <typename ClusterTreeInstance>
-Packing solveByLocalClusterTree(const ClusterTreeInstance &instance,
-                                const bool decantMaximiserOutputs = true)
-{
-    auto oneHostMaximiser =
-        [&](const ClusterTreeInstance &inst,
-            const std::unordered_map<std::shared_ptr<const Guest>, int> &profits) {
-            return maximiseOneHostByClusterTree(inst, profits);
-        };
-
-    auto nHostMaximiser = [&](const ClusterTreeInstance &inst, const size_t maxHosts) {
-        return maximiseByLocalSearch<ClusterTreeInstance>(inst, maxHosts, oneHostMaximiser);
-    };
-
-    return solveByMaximiser<ClusterTreeInstance>(instance, nHostMaximiser, true,
-                                                 decantMaximiserOutputs);
 }
 
 /**
@@ -482,6 +431,57 @@ Packing solveByMaximiser(
     }
 
     return std::move(*bestPacking);
+}
+
+/**
+ * Solves the instance by reduction to the general maximisation problem, then approximate reduction
+ * to the one-host maximisation problem, which is approximated by Li, et al. (2009), and in the case
+ * where if initialSubsetSize = 1, by Rampersaud & Grosu (2014).
+ *
+ * @param instance the instance to solve
+ * @param initialSubsetSize place guests by computing the efficiency of each possible guest subset
+ * of this size
+ * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
+ * @return a valid packing
+ */
+template <typename InstanceT>
+Packing solveByLocalSubsetEfficiency(const InstanceT &instance, const int initialSubsetSize,
+                                     const bool decantMaximiserOutputs = true)
+{
+    auto oneHostMaximiser = [&](const InstanceT &inst,
+                                const std::unordered_map<const Guest *, int> &profits) {
+        return maximiseOneHostBySubsetEfficiency(inst, profits, initialSubsetSize);
+    };
+
+    auto nHostMaximiser = [&](const InstanceT &inst, const size_t maxHosts) {
+        return maximiseByLocalSearch<InstanceT>(inst, maxHosts, oneHostMaximiser);
+    };
+
+    return solveByMaximiser<InstanceT>(instance, nHostMaximiser, true, decantMaximiserOutputs);
+}
+
+/**
+ * Solves the instance by reduction to the n-host maximisation problem, then approximate reduction
+ * to the one-host maximisation problem, which is approximated by the Sinderal, et al. (2011) DP
+ * algorithm on the cluster-tree model
+ *
+ * @param tree the cluster tree instance to solve
+ * @param decantMaximiserOutputs whether to decant the intermediate maximiser outputs
+ * @return a valid packing
+ */
+inline Packing solveByLocalClusterTree(const ClusterTree &tree,
+                                       const bool decantMaximiserOutputs = true)
+{
+    auto oneHostMaximiser = [&](const ClusterTree &tree,
+                                const std::unordered_map<const Guest *, int> &profits) {
+        return maximiseOneHostByClusterTree(tree, profits);
+    };
+
+    auto nHostMaximiser = [&](const ClusterTree &tree, const size_t maxHosts) {
+        return maximiseByLocalSearch<ClusterTree>(tree, maxHosts, oneHostMaximiser);
+    };
+
+    return solveByMaximiser<ClusterTree>(tree, nHostMaximiser, true, decantMaximiserOutputs);
 }
 
 }  // namespace vmp

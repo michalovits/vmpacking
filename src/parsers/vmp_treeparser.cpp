@@ -18,12 +18,12 @@ TreeParser::TreeParser(std::string directory, std::string capacityName, std::str
 {
 }
 
-std::shared_ptr<Guest> TreeParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> TreeParser::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
-        return nullptr;
+        return std::nullopt;
     }
-    return std::make_shared<Guest>(
+    return Guest(
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
@@ -35,7 +35,7 @@ void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
 
         const size_t child =
             childJson.contains(guestPagesName)
-                ? builder.addLeafNode(parent, parseGuest(childJson), std::move(childPages))
+                ? builder.addLeafNode(parent, *parseGuest(childJson), std::move(childPages))
                 : builder.addInnerNode(parent, std::move(childPages));
 
         if (childJson.contains(childrenName)) {
@@ -44,11 +44,11 @@ void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
     }
 };
 
-std::vector<TreeInstance> TreeParser::load(const size_t maxInstances)
+std::vector<Tree> TreeParser::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
-    std::vector<TreeInstance> instances;
+    std::vector<Tree> instances;
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -74,13 +74,14 @@ std::vector<TreeInstance> TreeParser::load(const size_t maxInstances)
             assert(rootNodeJson.contains(capacityName));
 
             const size_t capacity = rootNodeJson[capacityName].get<size_t>();
-            const auto rootGuest = parseGuest(rootNodeJson);
+            auto rootGuest = parseGuest(rootNodeJson);
             auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeBuilder builder(capacity, rootGuest != nullptr ? std::unordered_set<int>{}
-                                                               : std::move(rootPages));
-            if (rootGuest != nullptr) {
-                builder.addLeafNode(builder.rootNode(), rootGuest, std::move(rootPages));
+            TreeBuilder builder(capacity, rootGuest.has_value() ? std::unordered_set<int>{}
+                                                                : std::move(rootPages));
+            if (rootGuest.has_value()) {
+                builder.addLeafNode(builder.rootNode(), std::move(*rootGuest),
+                                    std::move(rootPages));
             }
 
             if (rootNodeJson.contains(childrenName)) {
