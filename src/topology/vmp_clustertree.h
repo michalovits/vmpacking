@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <span>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -24,6 +25,7 @@ class ClusterTree
     [[nodiscard]] std::span<const Guest> guests() const;
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t capacity() const;
+    [[nodiscard]] const std::string &label() const;
 
     [[nodiscard]] const std::vector<NodeId> &nodesOfCluster(ClusterId cid) const;
     [[nodiscard]] const std::vector<ClusterId> &childrenOfCluster(ClusterId cid) const;

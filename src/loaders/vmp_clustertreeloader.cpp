@@ -1,14 +1,15 @@
-#include <vmp_clustertreeparser.h>
+#include <vmp_clustertreeloader.h>
 
 #include <cassert>
 #include <fstream>
+#include <string>
 
 using json = nlohmann::json;
 
 namespace vmp
 {
 
-ClusterTreeParser::ClusterTreeParser(std::string directory, std::string capacityName,
+ClusterTreeLoader::ClusterTreeLoader(std::string directory, std::string capacityName,
                                      std::string nodesName, std::string nodeIdName,
                                      std::string nodeParentsName, std::string pagesName,
                                      std::string guestPagesName, std::string clusterChildrenName)
@@ -23,7 +24,7 @@ ClusterTreeParser::ClusterTreeParser(std::string directory, std::string capacity
 {
 }
 
-std::optional<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> ClusterTreeLoader::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
         return std::nullopt;
@@ -32,7 +33,7 @@ std::optional<Guest> ClusterTreeParser::parseGuest(const json &nodeJson) const
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const size_t parentCluster,
+void ClusterTreeLoader::parseClusterSubtree(ClusterTreeBuilder &builder, const size_t parentCluster,
                                             const json &clusterJson,
                                             std::unordered_map<size_t, size_t> &fromJsonNode,
                                             const bool skipRoot) const
@@ -65,7 +66,7 @@ void ClusterTreeParser::parseClusterSubtree(ClusterTreeBuilder &builder, const s
     }
 }
 
-std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
+std::vector<ClusterTree> ClusterTreeLoader::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
@@ -101,6 +102,8 @@ std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
 
             auto builder = ClusterTreeBuilder(capacity);
             parseClusterSubtree(builder, builder.rootCluster(), rootNodeJson, jsonToNodeIds, true);
+
+            builder.setLabel(path.filename().string() + "#" + std::to_string(i));
 
             instances.push_back(std::move(builder).build());
             ++processedInstances[path];

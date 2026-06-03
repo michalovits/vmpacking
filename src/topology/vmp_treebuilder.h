@@ -4,6 +4,7 @@
 #include <vmp_guest.h>
 #include <vmp_tree.h>
 
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -20,6 +21,8 @@ class TreeBuilder
     NodeId addInnerNode(NodeId parentNid, std::unordered_set<int> pages);
     NodeId addLeafNode(NodeId parentNid, Guest guest, std::unordered_set<int> pages);
 
+    void setLabel(std::string label);
+
     static NodeId rootNode();
 
     [[nodiscard]] Tree build() &&;
@@ -27,6 +30,7 @@ class TreeBuilder
   private:
     size_t capacity_;
     Tree tree_;
+    std::string label_;
 
     // Parallel to tree_.leaves_
     std::vector<Guest> guests_;

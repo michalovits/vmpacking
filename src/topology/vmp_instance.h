@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -15,8 +16,8 @@ namespace vmp
 class Instance
 {
   public:
-    Instance(const size_t capacity, std::vector<Guest> guests)
-        : capacity_(capacity), guests_(std::move(guests))
+    Instance(const size_t capacity, std::vector<Guest> guests, std::string label = "")
+        : capacity_(capacity), guests_(std::move(guests)), label_(std::move(label))
     {
     }
 
@@ -30,9 +31,13 @@ class Instance
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t capacity() const;
 
+    [[nodiscard]] const std::string &label() const;
+    void setLabel(std::string label);
+
   private:
     size_t capacity_;
     std::vector<Guest> guests_;
+    std::string label_;
 };
 
 std::ostream &operator<<(std::ostream &os, const Instance &instance);

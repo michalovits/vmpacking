@@ -1,5 +1,5 @@
-#ifndef VMP_CLUSTERTREEPARSER_H
-#define VMP_CLUSTERTREEPARSER_H
+#ifndef VMP_CLUSTERTREELOADER_H
+#define VMP_CLUSTERTREELOADER_H
 
 #include <vmp_clustertreebuilder.h>
 
@@ -13,10 +13,10 @@
 namespace vmp
 {
 
-class ClusterTreeParser
+class ClusterTreeLoader
 {
   public:
-    explicit ClusterTreeParser(std::string directory, std::string capacityName = "capacity",
+    explicit ClusterTreeLoader(std::string directory, std::string capacityName = "capacity",
                                std::string nodesName = "nodes", std::string nodeIdName = "node_id",
                                std::string nodeParentsName = "node_parents",
                                std::string pagesName = "node_pages",
@@ -50,4 +50,4 @@ class ClusterTreeParser
 
 };  // namespace vmp
 
-#endif  // VMP_TREEPARSER_H
+#endif  // VMP_TREELOADER_H

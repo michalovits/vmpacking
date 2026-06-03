@@ -79,9 +79,14 @@ ClusterTreeBuilder::ClusterId ClusterTreeBuilder::createCluster(const ClusterId 
     return cid;
 }
 
+void ClusterTreeBuilder::setLabel(std::string label)
+{
+    label_ = std::move(label);
+}
+
 ClusterTree ClusterTreeBuilder::build() &&
 {
-    auto instance = std::make_shared<const Instance>(capacity_, std::move(guests_));
+    auto instance = std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
     const auto instanceGuests = instance->guests();
 
     for (size_t i = 0; i < tree_.leaves_.size(); ++i) {

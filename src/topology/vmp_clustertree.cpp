@@ -31,6 +31,11 @@ size_t ClusterTree::capacity() const
     return instance_->capacity();
 }
 
+const std::string &ClusterTree::label() const
+{
+    return instance_->label();
+}
+
 const std::vector<ClusterTree::NodeId> &ClusterTree::nodesOfCluster(const ClusterId cid) const
 {
     return clusters_[cid].nodes;

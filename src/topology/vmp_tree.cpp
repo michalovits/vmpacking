@@ -27,6 +27,11 @@ size_t Tree::capacity() const
     return instance_->capacity();
 }
 
+const std::string &Tree::label() const
+{
+    return instance_->label();
+}
+
 const std::vector<Tree::NodeId> &Tree::childrenOfNode(const NodeId nid) const
 {
     return nodes_[nid]->children;

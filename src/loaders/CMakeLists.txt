@@ -1,7 +1,7 @@
 target_sources(vmp PRIVATE
-        vmp_clustertreeparser.cpp
-        vmp_instanceparser.cpp
-        vmp_treeparser.cpp
+        vmp_clustertreeloader.cpp
+        vmp_instanceloader.cpp
+        vmp_treeloader.cpp
 )
 
 target_include_directories(vmp PUBLIC

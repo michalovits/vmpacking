@@ -4,6 +4,7 @@
 #include <vmp_clustertree.h>
 #include <vmp_guest.h>
 
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -23,6 +24,8 @@ class ClusterTreeBuilder
     NodeId addLeafNode(std::vector<NodeId> parentNids, Guest guest, std::unordered_set<int> pages);
     ClusterId createCluster(ClusterId parentCid);
 
+    void setLabel(std::string label);
+
     [[nodiscard]] static ClusterId rootCluster();
 
     [[nodiscard]] ClusterTree build() &&;
@@ -32,6 +35,7 @@ class ClusterTreeBuilder
 
     size_t capacity_;
     ClusterTree tree_;
+    std::string label_;
 
     // Parallel to tree.leaves_
     std::vector<Guest> guests_;

@@ -1,5 +1,5 @@
-#ifndef VMP_TREEPARSER_H
-#define VMP_TREEPARSER_H
+#ifndef VMP_TREELOADER_H
+#define VMP_TREELOADER_H
 
 #include <vmp_treebuilder.h>
 
@@ -13,10 +13,10 @@
 namespace vmp
 {
 
-class TreeParser
+class TreeLoader
 {
   public:
-    explicit TreeParser(std::string directory, std::string capacityName = "capacity",
+    explicit TreeLoader(std::string directory, std::string capacityName = "capacity",
                         std::string guestPagesName = "guest_pages", std::string pagesName = "pages",
                         std::string childrenName = "children");
 
@@ -41,4 +41,4 @@ class TreeParser
 
 }  // namespace vmp
 
-#endif  // VMP_TREEPARSER_H
+#endif  // VMP_TREELOADER_H
