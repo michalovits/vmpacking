@@ -64,10 +64,16 @@ cmake --build .
 Missing suite directories are skipped.
 
 ```shell
-./benchmarks/vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
-./benchmarks/vmp_benchmarks /path/to/instances -w4 # 4 threads
-./benchmarks/vmp_benchmarks /path/to/instances -w1 # 1 thread (likely most representative measurements)
+vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
+vmp_benchmarks /path/to/instances -w4 # 4 threads
+vmp_benchmarks /path/to/instances -w1 # 1 thread (likely most representative measurements)
 ```
+
+Instances are loaded and solved in batches of `min(32, workers * 4)` that are parallelised within.
+The tradeoff is between effective load balancing and contention for shared caches.
+
+You may want to experiment with this on your system!
+Override with `-b N` / `--batch N`.
 
 ## Testing
 

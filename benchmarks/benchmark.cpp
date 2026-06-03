@@ -35,12 +35,9 @@ struct Config
     std::string clusterTreeDir;
 
     unsigned workers;
-    bool help;
+    size_t maxResidentInstances;  // limits the number of instances that can be loaded at once
 
-    // limits the number of instances that can be loaded at once
-    // there is a value maxResidentInstances > workers that parallelises the best
-    // since it limits contention in shared caches yet load balances well
-    size_t maxResidentInstances;
+    bool help;
 };
 
 struct Result
@@ -88,19 +85,18 @@ using Task = std::function<Result()>;
 
 void printUsage(const char *program)
 {
-    std::cout << "Usage: " << program << " <instance-dir> [-w N | --workers N]\n"
+    std::cout << "Usage: " << program << " <instance-dir> [-w N | --workers N] [-b N | --batch N]\n"
               << "  Runs every solver over each instance in the three benchmark\n"
-              << "  suites under <instance-dir> and reports timings as CSV on stdout.\n\n"
-              << "  -w N, --workers N  worker threads (default: logical cores; -w1 for\n"
-              << "                     single-threaded, most accurate timings)\n";
+              << "  suites under <instance-dir> and reports timings to stdout as CSV.\n\n"
+              << "  -w N, --workers N  number of worker threads (default: logical cores)\n"
+              << "  -b N, --batch N    instances loaded per batch (default: min(32, workers*4)\n";
 }
 
 Config parseConfig(int argc, char **argv)
 {
-    Config cfg;
-
-    cfg.workers = std::max(1u, std::thread::hardware_concurrency());
-    cfg.help = false;
+    auto cfg = Config{ .workers = std::max(1u, std::thread::hardware_concurrency()),
+                       .maxResidentInstances = 0,
+                       .help = false };
 
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -119,29 +115,53 @@ Config parseConfig(int argc, char **argv)
             continue;
         }
 
+        std::string flag;
         std::string value;
         if (arg == "-w" || arg == "--workers") {
+            flag = "w";
             if (i + 1 < argc) {
                 value = argv[++i];
             }
         }
         else if (arg.rfind("-w", 0) == 0) {
+            flag = "w";
             value = arg.substr(2);
         }
         else if (arg.rfind("--workers=", 0) == 0) {
+            flag = "w";
             value = arg.substr(10);
+        }
+        else if (arg == "-b" || arg == "--batch") {
+            flag = "b";
+            if (i + 1 < argc) {
+                value = argv[++i];
+            }
+        }
+        else if (arg.rfind("-b", 0) == 0) {
+            flag = "b";
+            value = arg.substr(2);
+        }
+        else if (arg.rfind("--batch=", 0) == 0) {
+            flag = "b";
+            value = arg.substr(8);
         }
 
         if (!value.empty()) {
             const int parsed = std::atoi(value.c_str());
             if (parsed > 0) {
-                cfg.workers = static_cast<unsigned>(parsed);
+                if (flag == "w") {
+                    cfg.workers = static_cast<unsigned>(parsed);
+                }
+                if (flag == "b") {
+                    cfg.maxResidentInstances = static_cast<size_t>(parsed);
+                }
             }
         }
     }
 
-    // TODO could expose this, but haven't really needed to
-    cfg.maxResidentInstances = std::min(32u, cfg.workers * 4);
+    if (cfg.maxResidentInstances == 0) {  // default if still unset
+        cfg.maxResidentInstances = std::min(32u, cfg.workers * 4);
+    }
 
     return cfg;
 }
