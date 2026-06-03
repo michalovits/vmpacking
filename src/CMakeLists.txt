@@ -11,4 +11,4 @@ target_include_directories(vmp PUBLIC
 )
 
 add_subdirectory(topology)
-add_subdirectory(parsers)
+add_subdirectory(loaders)

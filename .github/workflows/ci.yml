@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DVMP_BUILD_BENCHMARKS=ON
       - name: Build
         run: cmake --build build -j
       - name: Test
@@ -29,5 +29,5 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang-format-19
       - name: Check formatting
         run: |
-          find src tests examples -type f \( -name '*.cpp' -o -name '*.h' \) \
+          find src tests examples benchmarks -type f \( -name '*.cpp' -o -name '*.h' \) \
             -exec clang-format-19 --dry-run --Werror {} +

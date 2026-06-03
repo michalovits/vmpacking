@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <vmp_clustertree.h>
-#include <vmp_clustertreeparser.h>
+#include <vmp_clustertreeloader.h>
 #include <vmp_instance.h>
-#include <vmp_instanceparser.h>
+#include <vmp_instanceloader.h>
 #include <vmp_packing.h>
 #include <vmp_solvers.h>
 #include <vmp_tree.h>
-#include <vmp_treeparser.h>
+#include <vmp_treeloader.h>
 
 #include <filesystem>
 
@@ -24,7 +24,7 @@ void requireValidPacking(vmp::Packing (*solve)(const Instance &), const Instance
     REQUIRE(solve(instance).validateForInstance(instance) == vmp::PACKING_OKAY);
 }
 
-std::string inputDirectory(const char *subdir)
+std::string getDir(const char *subdir)
 {
     return std::string(VMP_TEST_INSTANCE_DIR) + "/" + subdir;
 }
@@ -42,11 +42,11 @@ using SetGuestIt = std::unordered_set<const vmp::Guest *>::const_iterator;
 
 TEST_CASE("e2e: general instances", "[e2e]")
 {
-    const auto dir = inputDirectory("general");
+    const auto dir = getDir("general");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::InstanceParser(dir);
-    const auto instances = parser.load();
+    auto loader = vmp::InstanceLoader(dir);
+    const auto instances = loader.load();
     REQUIRE_FALSE(instances.empty());
 
     for (size_t i = 0; i < instances.size(); ++i) {
@@ -63,11 +63,11 @@ TEST_CASE("e2e: general instances", "[e2e]")
 
 TEST_CASE("e2e: tree instances", "[e2e]")
 {
-    const auto dir = inputDirectory("tree");
+    const auto dir = getDir("tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::TreeParser(dir);
-    const auto instances = parser.load();
+    auto loader = vmp::TreeLoader(dir);
+    const auto instances = loader.load();
     REQUIRE_FALSE(instances.empty());
 
     const auto solveByTreeFirstFit = [](const vmp::Tree &inst) {
@@ -94,11 +94,11 @@ TEST_CASE("e2e: tree instances", "[e2e]")
 
 TEST_CASE("e2e: cluster-tree instances", "[e2e]")
 {
-    const auto dir = inputDirectory("cluster-tree");
+    const auto dir = getDir("cluster-tree");
     SKIP_IF_MISSING(dir);
 
-    auto parser = vmp::ClusterTreeParser(dir);
-    const auto instances = parser.load();
+    auto loader = vmp::ClusterTreeLoader(dir);
+    const auto instances = loader.load();
     REQUIRE_FALSE(instances.empty());
 
     for (size_t i = 0; i < instances.size(); ++i) {

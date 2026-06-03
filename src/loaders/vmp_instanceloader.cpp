@@ -1,7 +1,8 @@
-#include <vmp_instanceparser.h>
+#include <vmp_instanceloader.h>
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <vector>
 
 using json = nlohmann::json;
@@ -9,7 +10,7 @@ using json = nlohmann::json;
 namespace vmp
 {
 
-InstanceParser::InstanceParser(std::string directory, std::string capacityName,
+InstanceLoader::InstanceLoader(std::string directory, std::string capacityName,
                                std::string guestsName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
@@ -19,9 +20,11 @@ InstanceParser::InstanceParser(std::string directory, std::string capacityName,
 
 static std::vector<Instance>
 makeInstances(const std::vector<int> &capacityData,
-              const std::vector<std::vector<std::vector<int>>> &guestData)
+              const std::vector<std::vector<std::vector<int>>> &guestData,
+              const std::vector<std::string> &labels)
 {
     assert(capacityData.size() == guestData.size());
+    assert(capacityData.size() == labels.size());
 
     std::vector<Instance> instances;
     for (size_t i = 0; i < capacityData.size(); ++i) {
@@ -31,19 +34,20 @@ makeInstances(const std::vector<int> &capacityData,
         for (const auto &guestPages : guestData[i]) {
             guests.emplace_back(std::unordered_set(guestPages.begin(), guestPages.end()));
         }
-        instances.emplace_back(capacityData[i], std::move(guests));
+        instances.emplace_back(capacityData[i], std::move(guests), labels[i]);
     }
 
     return instances;
 }
 
-std::vector<Instance> InstanceParser::load(const size_t maxInstances)
+std::vector<Instance> InstanceLoader::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
     std::vector<Instance> instances;
     std::vector<int> capacityData;
     std::vector<std::vector<std::vector<int>>> guestData;
+    std::vector<std::string> labels;
 
     for (const auto &directoryEntry : fs::directory_iterator(directory)) {
         if (directoryEntry.path().extension() == ".json") {
@@ -72,16 +76,17 @@ std::vector<Instance> InstanceParser::load(const size_t maxInstances)
 
             capacityData.push_back(instanceJson[capacityName].get<int>());
             guestData.push_back(instanceJson[guestsName].get<std::vector<std::vector<int>>>());
+            labels.push_back(path.filename().string() + "#" + std::to_string(i));
 
             ++processedInstances[path];
 
             if (guestData.size() == maxInstances) {
-                return makeInstances(capacityData, guestData);
+                return makeInstances(capacityData, guestData, labels);
             }
         }
     }
 
-    return makeInstances(capacityData, guestData);
+    return makeInstances(capacityData, guestData, labels);
 }
 
 }  // namespace vmp

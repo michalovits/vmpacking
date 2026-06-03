@@ -1,15 +1,16 @@
 #include <unordered_set>
-#include <vmp_treeparser.h>
+#include <vmp_treeloader.h>
 
 #include <cassert>
 #include <fstream>
+#include <string>
 
 using json = nlohmann::json;
 
 namespace vmp
 {
 
-TreeParser::TreeParser(std::string directory, std::string capacityName, std::string guestPagesName,
+TreeLoader::TreeLoader(std::string directory, std::string capacityName, std::string guestPagesName,
                        std::string pagesName, std::string childrenName)
     : directory(std::move(directory)),
       capacityName(std::move(capacityName)),
@@ -19,7 +20,7 @@ TreeParser::TreeParser(std::string directory, std::string capacityName, std::str
 {
 }
 
-std::optional<Guest> TreeParser::parseGuest(const json &nodeJson) const
+std::optional<Guest> TreeLoader::parseGuest(const json &nodeJson) const
 {
     if (!nodeJson.contains(guestPagesName)) {
         return std::nullopt;
@@ -28,7 +29,7 @@ std::optional<Guest> TreeParser::parseGuest(const json &nodeJson) const
         std::unordered_set<int>(nodeJson[guestPagesName].begin(), nodeJson[guestPagesName].end()));
 }
 
-void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
+void TreeLoader::parseChildren(TreeBuilder &builder, const size_t parent,
                                const json &nodeJson) const
 {
     for (const auto &childJson : nodeJson[childrenName]) {
@@ -45,7 +46,7 @@ void TreeParser::parseChildren(TreeBuilder &builder, const size_t parent,
     }
 };
 
-std::vector<Tree> TreeParser::load(const size_t maxInstances)
+std::vector<Tree> TreeLoader::load(const size_t maxInstances)
 {
     namespace fs = std::filesystem;
 
@@ -94,6 +95,8 @@ std::vector<Tree> TreeParser::load(const size_t maxInstances)
             if (rootNodeJson.contains(childrenName)) {
                 parseChildren(builder, builder.rootNode(), rootNodeJson);
             }
+
+            builder.setLabel(path.filename().string() + "#" + std::to_string(i));
 
             instances.push_back(std::move(builder).build());
             ++processedInstances[path];

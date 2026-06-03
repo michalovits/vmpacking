@@ -20,6 +20,16 @@ size_t Instance::capacity() const
     return capacity_;
 }
 
+const std::string &Instance::label() const
+{
+    return label_;
+}
+
+void Instance::setLabel(std::string label)
+{
+    label_ = std::move(label);
+}
+
 std::ostream &operator<<(std::ostream &os, const Instance &instance)
 {
     os << "Instance{ capacity=" << instance.capacity() << ", guests=[";

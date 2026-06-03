@@ -1,5 +1,5 @@
-#ifndef VMP_INSTANCEPARSER_H
-#define VMP_INSTANCEPARSER_H
+#ifndef VMP_INSTANCELOADER_H
+#define VMP_INSTANCELOADER_H
 
 #include <vmp_instance.h>
 
@@ -13,10 +13,10 @@
 namespace vmp
 {
 
-class InstanceParser
+class InstanceLoader
 {
   public:
-    explicit InstanceParser(std::string directory, std::string capacityName = "capacity",
+    explicit InstanceLoader(std::string directory, std::string capacityName = "capacity",
                             std::string guestsName = "guests");
 
     [[nodiscard]] std::vector<Instance>
@@ -34,4 +34,4 @@ class InstanceParser
 
 }  // namespace vmp
 
-#endif  // VMP_INSTANCEPARSER_H
+#endif  // VMP_INSTANCELOADER_H

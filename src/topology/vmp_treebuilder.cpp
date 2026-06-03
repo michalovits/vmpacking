@@ -41,9 +41,15 @@ TreeBuilder::NodeId TreeBuilder::addLeafNode(const NodeId parentNid, Guest guest
     return nid;
 }
 
+void TreeBuilder::setLabel(std::string label)
+{
+    label_ = std::move(label);
+}
+
 Tree TreeBuilder::build() &&
 {
-    auto instance = std::make_shared<const Instance>(capacity_, std::move(guests_));
+    auto instance =
+        std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
     const auto instanceGuests = instance->guests();
 
     auto &nodes = tree_.nodes_;

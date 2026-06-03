@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -24,6 +25,7 @@ class Tree
     [[nodiscard]] std::span<const Guest> guests() const;
     [[nodiscard]] size_t guestCount() const;
     [[nodiscard]] size_t capacity() const;
+    [[nodiscard]] const std::string &label() const;
 
     [[nodiscard]] const std::vector<NodeId> &childrenOfNode(NodeId nid) const;
     [[nodiscard]] NodeId parentOfNode(NodeId nid) const;
