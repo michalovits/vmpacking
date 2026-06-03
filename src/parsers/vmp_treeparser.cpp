@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include <vmp_treeparser.h>
 
 #include <cassert>
@@ -60,8 +61,11 @@ std::vector<Tree> TreeParser::load(const size_t maxInstances)
         const auto path = *paths.begin();
         paths.erase(path);
 
-        std::ifstream file(path);
-        assert(file.is_open());
+        auto file = std::ifstream(path);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open file " + path.string());
+        }
 
         if (!processedInstances.contains(path)) {
             processedInstances[path] = 0;
@@ -71,14 +75,17 @@ std::vector<Tree> TreeParser::load(const size_t maxInstances)
 
         for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &rootNodeJson = rootNodesJson[i];
-            assert(rootNodeJson.contains(capacityName));
-
             const size_t capacity = rootNodeJson[capacityName].get<size_t>();
-            auto rootGuest = parseGuest(rootNodeJson);
-            auto rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
 
-            TreeBuilder builder(capacity, rootGuest.has_value() ? std::unordered_set<int>{}
-                                                                : std::move(rootPages));
+            auto rootGuest = parseGuest(rootNodeJson);
+            auto rootPages = std::unordered_set<int>{};
+
+            if (rootGuest.has_value()) {
+                rootPages = rootNodeJson[pagesName].get<std::unordered_set<int>>();
+            }
+
+            auto builder = TreeBuilder(capacity, std::move(rootPages));
+
             if (rootGuest.has_value()) {
                 builder.addLeafNode(builder.rootNode(), std::move(*rootGuest),
                                     std::move(rootPages));

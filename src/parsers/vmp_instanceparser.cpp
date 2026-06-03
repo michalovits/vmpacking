@@ -55,8 +55,11 @@ std::vector<Instance> InstanceParser::load(const size_t maxInstances)
         const auto path = *paths.begin();
         paths.erase(path);
 
-        std::ifstream file(path);
-        assert(file.is_open());
+        auto file = std::ifstream(path);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open file " + path.string());
+        }
 
         if (!processedInstances.contains(path)) {
             processedInstances[path] = 0;
@@ -66,8 +69,6 @@ std::vector<Instance> InstanceParser::load(const size_t maxInstances)
 
         for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
             const auto &instanceJson = rootNodesJson[i];
-            assert(instanceJson.contains(capacityName));
-            assert(instanceJson.contains(guestsName));
 
             capacityData.push_back(instanceJson[capacityName].get<int>());
             guestData.push_back(instanceJson[guestsName].get<std::vector<std::vector<int>>>());

@@ -30,24 +30,24 @@ double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, i
 }
 
 double calculateOpportunityAwareEfficiency(const Guest &guest, const Host &host,
-                                           const std::vector<std::unique_ptr<Host>> &allHosts)
+                                           const std::vector<std::unique_ptr<Host>> &hosts)
 {
     const size_t pagesOnHost = guest.countUniquePagesOn(host);
+    size_t minDifference = std::numeric_limits<size_t>::max();
 
-    size_t minDifferenceWithOtherHost = std::numeric_limits<size_t>::max();
-    for (const auto &otherHost : allHosts) {
-        if (&host != otherHost.get()) {
-            minDifferenceWithOtherHost =
-                std::min(minDifferenceWithOtherHost, otherHost->countPagesNotOn(guest));
+    for (const auto &other : hosts) {
+        if (other.get() == &host) {
+            continue;
         }
-    }
-    // Not found
-    if (minDifferenceWithOtherHost == std::numeric_limits<size_t>::max()) {
-        minDifferenceWithOtherHost = 0;
+        minDifference = std::min(minDifference, other->countPagesNotOn(guest));
     }
 
-    return static_cast<double>(pagesOnHost + minDifferenceWithOtherHost) /
-           std::sqrt(guest.uniquePageCount());
+    // Not found
+    if (minDifference == std::numeric_limits<size_t>::max()) {
+        minDifference = 0;
+    }
+
+    return static_cast<double>(pagesOnHost + minDifference) / std::sqrt(guest.uniquePageCount());
 }
 
 std::unordered_map<Tree::NodeId, TreeLowerBounds>
@@ -130,6 +130,23 @@ calculateAllSubtreeLowerBounds(const Tree &tree, const size_t capacity)
     }
 
     return res;
+}
+
+bool nextComb(std::vector<int> &indices, const int n)
+{
+    const int k = static_cast<int>(indices.size());
+
+    for (int i = k - 1; i >= 0; --i) {
+        if (indices[i] >= n - k + i) {
+            continue;
+        }
+        ++indices[i];
+        for (int j = i + 1; j < k; ++j) {
+            indices[j] = indices[j - 1] + 1;
+        }
+        return true;
+    }
+    return false;
 }
 
 }  // namespace vmp

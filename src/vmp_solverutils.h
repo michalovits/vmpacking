@@ -21,7 +21,7 @@ double calculateRelSize(const Guest &guest, const std::unordered_map<int, int> &
 double calculateSizeRelRatio(const Guest &guest, const std::unordered_map<int, int> &pageFreq);
 
 double calculateOpportunityAwareEfficiency(const Guest &guest, const Host &host,
-                                           const std::vector<std::unique_ptr<Host>> &allHosts);
+                                           const std::vector<std::unique_ptr<Host>> &hosts);
 
 template <ConstPtrIterator<Guest> GuestIt>
 void decantGuests(std::vector<std::unique_ptr<Host>> &hosts,
@@ -115,30 +115,30 @@ std::vector<std::vector<const Guest *>> partitionConnectedGuestsTogether(GuestIt
                                                                          GuestIt guestsEnd)
 {
     std::vector<std::vector<const Guest *>> result;
-    std::unordered_set<const Guest *> guestsVisited;
+    std::unordered_set<const Guest *> discovered;
 
     for (; guestsBegin != guestsEnd; ++guestsBegin) {
-        if (guestsVisited.contains(*guestsBegin)) {
+        if (discovered.contains(*guestsBegin)) {
             continue;
         }
 
         std::vector<const Guest *> component;
-        std::queue<const Guest *> guestsToVisit;
-        guestsToVisit.push(*guestsBegin);
+        std::queue<const Guest *> frontier;
+        frontier.push(*guestsBegin);
 
-        while (!guestsToVisit.empty()) {
-            const auto guest = guestsToVisit.front();
-            guestsToVisit.pop();
+        while (!frontier.empty()) {
+            const auto guest = frontier.front();
+            frontier.pop();
 
             component.push_back(guest);
-            guestsVisited.insert(guest);
 
             for (auto it = std::next(guestsBegin); it != guestsEnd; ++it) {
                 const auto childCandidate = *it;
 
-                if (!guestsVisited.contains(childCandidate) &&
+                if (!discovered.contains(childCandidate) &&
                     guestsHaveSharedPage(*childCandidate, *guest)) {
-                    guestsToVisit.push(childCandidate);
+                    frontier.push(childCandidate);
+                    discovered.insert(childCandidate);
                 }
             }
         }
@@ -167,6 +167,8 @@ struct TreeLowerBounds
 
 std::unordered_map<Tree::NodeId, TreeLowerBounds>
 calculateAllSubtreeLowerBounds(const Tree &tree, const size_t capacity);
+
+bool nextComb(std::vector<int> &indices, const int n);
 
 }  // namespace vmp
 

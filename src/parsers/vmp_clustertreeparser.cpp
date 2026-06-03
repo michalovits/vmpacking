@@ -81,8 +81,11 @@ std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
         const auto path = *paths.begin();
         paths.erase(path);
 
-        std::ifstream file(path);
-        assert(file.is_open());
+        auto file = std::ifstream(path);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open file " + path.string());
+        }
 
         if (!processedInstances.contains(path)) {
             processedInstances[path] = 0;
@@ -91,14 +94,13 @@ std::vector<ClusterTree> ClusterTreeParser::load(const size_t maxInstances)
         const auto rootNodesJson = json::parse(file);
 
         for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
-            const auto &instanceJson = rootNodesJson[i];
-            assert(instanceJson.contains(capacityName));
+            const auto &rootNodeJson = rootNodesJson[i];
+            const size_t capacity = rootNodeJson[capacityName].get<size_t>();
 
-            const size_t capacity = instanceJson[capacityName].get<size_t>();
             std::unordered_map<size_t, size_t> jsonToNodeIds;
 
-            ClusterTreeBuilder builder(capacity);
-            parseClusterSubtree(builder, builder.rootCluster(), instanceJson, jsonToNodeIds, true);
+            auto builder = ClusterTreeBuilder(capacity);
+            parseClusterSubtree(builder, builder.rootCluster(), rootNodeJson, jsonToNodeIds, true);
 
             instances.push_back(std::move(builder).build());
             ++processedInstances[path];

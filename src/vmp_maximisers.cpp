@@ -1,6 +1,7 @@
 #include <vmp_maximisers.h>
 
 #include <vmp_clustertree.h>
+#include <vmp_solverutils.h>
 
 #include <algorithm>
 #include <cassert>
@@ -11,22 +12,6 @@
 
 namespace vmp
 {
-
-static bool nextComb(std::vector<int> &indices, const int n)
-{
-    const int k = static_cast<int>(indices.size());
-    for (int i = k - 1; i >= 0; --i) {
-        if (indices[i] >= n - k + i) {
-            continue;
-        }
-        ++indices[i];
-        for (int j = i + 1; j < k; ++j) {
-            indices[j] = indices[j - 1] + 1;
-        }
-        return true;
-    }
-    return false;
-}
 
 /// Find the most efficient subset of guests to place on a host given a
 /// mandatory subset size, accounting for the reward and page sharing within
@@ -220,7 +205,7 @@ findLowestCostAccessibleSelection(const auto &costs, const ClusterTree::ClusterI
     const auto &nodes = tree.nodesOfCluster(cid);
     assert(nodes.size() < 64);
 
-    std::optional<GuestSelection> lowestCost;
+    const GuestSelection *lowestCost = nullptr;
 
     for (uint64_t selectionMask = 0; selectionMask < 1ULL << nodes.size(); ++selectionMask) {
         if (!checkAllAccessible(selectionMask, accessibleMask)) {
@@ -231,11 +216,11 @@ findLowestCostAccessibleSelection(const auto &costs, const ClusterTree::ClusterI
         // Assume we have already processed the child nodes by topological sort
         const auto &cost = costs.at({ cid, selectionMask, degree, profitTarget });
 
-        if (!lowestCost.has_value() || cost.pageCount < lowestCost->pageCount) {
-            lowestCost = std::move(cost);
+        if (lowestCost == nullptr || cost.pageCount < lowestCost->pageCount) {
+            lowestCost = &cost;
         }
     }
-    return lowestCost;
+    return lowestCost ? std::optional(*lowestCost) : std::nullopt;
 }
 
 static std::optional<GuestSelection>
@@ -247,17 +232,17 @@ findMostProfitableScenarioAtRoot(const auto &costs, const ClusterTree &tree, con
     const size_t rootDegree = tree.childrenOfCluster(rootCid).size();
 
     size_t bestProfit = 0;
-    std::optional<GuestSelection> bestProfitCost;
+    const GuestSelection *bestProfitCost = nullptr;
 
     for (auto &[key, value] : costs) {
         if (key.cid == rootCid && key.childCount == rootDegree && key.profitTarget > bestProfit &&
             value.pageCount <= capacity) {
             bestProfit = key.profitTarget;
-            bestProfitCost = std::move(value);
+            bestProfitCost = &value;
         }
     }
 
-    return bestProfitCost;
+    return bestProfitCost ? std::optional(*bestProfitCost) : std::nullopt;
 }
 
 Host maximiseOneHostByClusterTree(const ClusterTree &tree,
