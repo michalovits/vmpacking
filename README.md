@@ -1,25 +1,30 @@
 # vmpacking (vmp)
 
-Algorithms for the overlap variant of the Bin Packing problem, VM Packing. Built as part of my undergraduate dissertation at St Andrews (spring 2025).
+Algorithms for the overlap variant of the Bin Packing problem, VM Packing. Built as part of my undergraduate dissertation at St Andrews in Spring 2025.
 
-Approximations currently [implemented](src/vmp_solvers.h):
+Direct approximations ([source code](src/vmp_solvers.h)):
 
 * Next Fit
 * First Fit
-* Greedy Placement by Efficiency
-* Greedy Placement by Opportunity-Aware Efficiency
-* Tree-Based Placement
-* Overload and Remove
-* Greedy Placement by Subset Efficiency (Reduction from VM Maximisation)
-* Cluster Tree-Based Placement (Reduction from VM Maximisation)
+* Greedy Placement by Efficiency (implements [[1]](https://doi.org/10.1016/j.cie.2017.10.015))
+* Overload and Remove (also implements [[1]](https://doi.org/10.1016/j.cie.2017.10.015))
+* Greedy Placement by Opportunity-Aware Efficiency (specialises [[2]](https://doi.org/10.3390/electronics12204205) to the single-resource fixed-capacity case)
+* Tree Placement (implements [[3]](https://doi.org/10.1145/1989493.1989554))
 
-Static treatments (applied before or after solving):
+Approximations are also possible by reducing VM Packing to VM Maximisation and in turn to Single-Host VM Maximisation ([source code](src/vmp_maximisers.h)). The dissertation proves that this reduction chain preserves approximation bounds:
 
-* Tree-Ordering pre-treatment
-* Cluster-Tree-Ordering pre-treatment
-* Decanting post-treatment
+* VM Packing to VM Maximisation: If the maximiser is β-approximate (realises at least a β fraction of optimal reward, 0 < β < 1), the VM Packing approximation is within O(-lg |guests| / lg (1-β)) of optimal
+* VM Maximisation to Single-Host VM Maximisation: If the single-host solver is α-approximate, the VM Maximisation approximated to within α/(α+1) - ε for any ε > 0 (uses [[4]](https://dl.acm.org/doi/10.5555/1109557.1109624))
 
-Several of these algorithms implement, reuse or take inspiration from other research, credited in the relevant code.
+Approximations via VM Maximisation:
+
+* Greedy Placement by Subset Efficiency (specialises and unifies the strategies of [[5]](https://www.sciencedirect.com/science/article/abs/pii/S0167739X18302619) and [[6]](https://doi.org/10.1109/TSC.2017.2786728) to use as a single-host maximiser)
+* Cluster-Tree Placement (uses [[3]](https://doi.org/10.1145/1989493.1989554) as a single-host maximiser)
+
+Treatments (applied before or after solving):
+
+* Tree-Ordering / Cluster-Tree-Ordering pre-treatments (reuse the data structures from [[3]](https://doi.org/10.1145/1989493.1989554))
+* Decanting post-treatment (implements [[1]](https://doi.org/10.1016/j.cie.2017.10.015))
 
 ## Usage Examples
 
@@ -60,8 +65,7 @@ cmake --build .
 
 ## Benchmarking
 
-`vmp_benchmarks` runs every solver over each instance in the three suites (`general/`, `tree/`, `cluster-tree/`) and reports time measurements to stdout as CSV: `suite,instance,solver,guests,capacity,hosts,time_ms,valid`.
-Missing suite directories are skipped.
+`vmp_benchmarks` runs every solver over each instance in three suite directories (`general`, `tree`, `cluster-tree`) and reports time measurements to stdout as CSV (tuples of `suite, instance, solver, guests, capacity, hosts, time_ms, valid`). Missing directories are skipped.
 
 ```shell
 vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
