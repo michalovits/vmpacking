@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <random>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -26,8 +27,6 @@
 namespace
 {
 
-using SetGuestIt = std::unordered_set<const vmp::Guest *>::const_iterator;
-
 struct Config
 {
     std::string generalDir;
@@ -35,7 +34,7 @@ struct Config
     std::string clusterTreeDir;
 
     unsigned workers;
-    size_t maxResidentInstances;  // limits the number of instances that can be loaded at once
+    size_t maxResidentInstances;  // sets the number of instances that are loaded at once
 
     bool help;
 };
@@ -169,7 +168,7 @@ Config parseConfig(int argc, char **argv)
 template <typename LoaderT, typename InstanceT>
 void runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solvers,
               const std::string &dir, unsigned workers, size_t maxResidentInstances,
-              std::vector<Result> &outResults)
+              std::mt19937 &rng, std::vector<Result> &outResults)
 {
     if (!std::filesystem::is_directory(dir)) {
         std::cerr << "skipping suite '" << suiteLabel << "': directory not found (" << dir << ")\n";
@@ -184,7 +183,10 @@ void runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solv
             break;
         }
 
-        auto results = runTasks(makeTasks(suiteLabel, instances, solvers), workers);
+        auto tasks = makeTasks(suiteLabel, instances, solvers);
+        std::shuffle(tasks.begin(), tasks.end(), rng);
+
+        auto results = runTasks(tasks, workers);
 
         for (auto &res : results) {
             outResults.push_back(std::move(res));
@@ -192,46 +194,62 @@ void runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solv
     }
 }
 
+auto decanted(auto solver)
+{
+    return [solver = std::move(solver)](const auto &instance) {
+        auto packing = solver(instance);
+        packing.decantGuests();
+        return packing;
+    };
+}
+
 std::vector<Solver<vmp::Instance>> generalSolvers()
 {
     return {
-        { "next-fit", vmp::solveByNextFit<vmp::Instance> },
-        { "first-fit", vmp::solveByFirstFit<vmp::Instance> },
-        { "efficiency", vmp::solveByEfficiency<vmp::Instance> },
-        { "opportunity-efficiency", vmp::solveByOpportunityAwareEfficiency<vmp::Instance> },
-        { "overload-remove", vmp::solveByOverloadAndRemove<vmp::Instance> },
+        { "nf", decanted(vmp::solveByNextFit<vmp::Instance>) },
+        { "ff", vmp::solveByFirstFit<vmp::Instance> },  // first-fit never needs decanting
+        { "eff", decanted(vmp::solveByEfficiency<vmp::Instance>) },
+        { "opp", decanted(vmp::solveByOpportunityAwareEfficiency<vmp::Instance>) },
+        { "oload", decanted(vmp::solveByOverloadAndRemove<vmp::Instance>) },
+
+        // Too slow, not worth it:
+
+        // { "subs-2", decanted([](const vmp::Instance &i) {
+        //       return vmp::solveByLocalSubsetEfficiency(i, 2);
+        //   }) },
     };
 }
 
 std::vector<Solver<vmp::Tree>> treeSolvers()
 {
-    const auto firstFit = [](const vmp::Tree &tree) {
-        return vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByFirstFit);
-    };
-    const auto efficiency = [](const vmp::Tree &tree) {
-        return vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByEfficiency);
-    };
-    const auto overloadAndRemove = [](const vmp::Tree &tree) {
-        return vmp::solveByTree<SetGuestIt>(tree, vmp::proceedByOverloadAndRemove);
-    };
+    using SetGuestIt = std::unordered_set<const vmp::Guest *>::const_iterator;
 
     return {
-        { "tree-first-fit", firstFit },
-        { "tree-efficiency", efficiency },
-        { "tree-overload-remove", overloadAndRemove },
-        { "opportunity-efficiency", vmp::solveByOpportunityAwareEfficiency<vmp::Tree> },
-        { "overload-remove", vmp::solveByOverloadAndRemove<vmp::Tree> },
+        { "nf-on-tree", decanted(vmp::solveByNextFit<vmp::Tree>) },
+        { "ff-on-tree", vmp::solveByFirstFit<vmp::Tree> },
+        { "eff-on-tree", decanted(vmp::solveByEfficiency<vmp::Tree>) },
+        { "opp-on-tree", decanted(vmp::solveByOpportunityAwareEfficiency<vmp::Tree>) },
+        { "oload-on-tree", decanted(vmp::solveByOverloadAndRemove<vmp::Tree>) },
+        { "tree-by-ff",
+          [](const vmp::Tree &t) {  // first-fit never needs decanting
+              return vmp::solveByTree<SetGuestIt>(t, vmp::proceedByFirstFit);
+          } },
+        { "tree-by-eff", decanted([](const vmp::Tree &t) {
+              return vmp::solveByTree<SetGuestIt>(t, vmp::proceedByEfficiency);
+          }) },
     };
 }
 
 std::vector<Solver<vmp::ClusterTree>> clusterTreeSolvers()
 {
     return {
-        { "next-fit", vmp::solveByNextFit<vmp::ClusterTree> },
-        { "first-fit", vmp::solveByFirstFit<vmp::ClusterTree> },
-        { "efficiency", vmp::solveByEfficiency<vmp::ClusterTree> },
-        { "opportunity-efficiency", vmp::solveByOpportunityAwareEfficiency<vmp::ClusterTree> },
-        { "overload-remove", vmp::solveByOverloadAndRemove<vmp::ClusterTree> },
+        { "nf-on-cluster", decanted(vmp::solveByNextFit<vmp::ClusterTree>) },
+        { "ff-on-cluster", vmp::solveByFirstFit<vmp::ClusterTree> },
+        { "eff-on-cluster", decanted(vmp::solveByEfficiency<vmp::ClusterTree>) },
+        { "opp-on-cluster", decanted(vmp::solveByOpportunityAwareEfficiency<vmp::ClusterTree>) },
+        { "oload-on-cluster", decanted(vmp::solveByOverloadAndRemove<vmp::ClusterTree>) },
+        { "cluster",
+          decanted([](const vmp::ClusterTree &t) { return vmp::solveByLocalClusterTree(t); }) },
     };
 }
 
@@ -275,7 +293,7 @@ std::vector<Task> makeTasks(const std::string &suiteLabel, const std::vector<Ins
 std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
 {
     const size_t total = tasks.size();
-    std::cerr << "solving " << total << " instance(s) on " << workers << " thread(s)\n";
+    std::cerr << "running " << total << " solve tasks(s) on " << workers << " thread(s)\n";
 
     std::vector<Result> results(total);
     std::atomic<size_t> nextIdx = 0;
@@ -309,7 +327,7 @@ std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
     const auto end = std::chrono::steady_clock::now();
     const double elapsed = std::chrono::duration<double>(end - start).count();
 
-    std::cerr << "done: " << total << " instance(s) in " << std::fixed << std::setprecision(3)
+    std::cerr << "completed " << total << " tasks(s) in " << std::fixed << std::setprecision(3)
               << elapsed << " s\n";
 
     return results;
@@ -331,17 +349,24 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    std::cerr << "config:" << " workers=" << cfg.workers
+              << " maxResidentInstances=" << cfg.maxResidentInstances << " generalDir='"
+              << cfg.generalDir << "'" << " treeDir='" << cfg.treeDir << "'"
+              << " clusterTreeDir='" << cfg.clusterTreeDir << "'" << '\n';
+
+    std::mt19937 rng{ std::random_device{}() };
     std::vector<Result> results;
 
     runSuite<vmp::InstanceLoader, vmp::Instance>("general", generalSolvers(), cfg.generalDir,
-                                                 cfg.workers, cfg.maxResidentInstances, results);
+                                                 cfg.workers, cfg.maxResidentInstances, rng,
+                                                 results);
 
     runSuite<vmp::TreeLoader, vmp::Tree>("tree", treeSolvers(), cfg.treeDir, cfg.workers,
-                                         cfg.maxResidentInstances, results);
+                                         cfg.maxResidentInstances, rng, results);
 
     runSuite<vmp::ClusterTreeLoader, vmp::ClusterTree>("cluster-tree", clusterTreeSolvers(),
                                                        cfg.clusterTreeDir, cfg.workers,
-                                                       cfg.maxResidentInstances, results);
+                                                       cfg.maxResidentInstances, rng, results);
 
     int invalid = 0;
     std::cout << Result::csvHeader() << '\n';
