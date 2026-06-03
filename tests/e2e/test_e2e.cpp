@@ -24,7 +24,7 @@ void requireValidPacking(vmp::Packing (*solve)(const Instance &), const Instance
     REQUIRE(solve(instance).validateForInstance(instance) == vmp::PACKING_OKAY);
 }
 
-std::string inputDirectory(const char *subdir)
+std::string getDir(const char *subdir)
 {
     return std::string(VMP_TEST_INSTANCE_DIR) + "/" + subdir;
 }
@@ -42,7 +42,7 @@ using SetGuestIt = std::unordered_set<const vmp::Guest *>::const_iterator;
 
 TEST_CASE("e2e: general instances", "[e2e]")
 {
-    const auto dir = inputDirectory("general");
+    const auto dir = getDir("general");
     SKIP_IF_MISSING(dir);
 
     auto loader = vmp::InstanceLoader(dir);
@@ -63,7 +63,7 @@ TEST_CASE("e2e: general instances", "[e2e]")
 
 TEST_CASE("e2e: tree instances", "[e2e]")
 {
-    const auto dir = inputDirectory("tree");
+    const auto dir = getDir("tree");
     SKIP_IF_MISSING(dir);
 
     auto loader = vmp::TreeLoader(dir);
@@ -94,7 +94,7 @@ TEST_CASE("e2e: tree instances", "[e2e]")
 
 TEST_CASE("e2e: cluster-tree instances", "[e2e]")
 {
-    const auto dir = inputDirectory("cluster-tree");
+    const auto dir = getDir("cluster-tree");
     SKIP_IF_MISSING(dir);
 
     auto loader = vmp::ClusterTreeLoader(dir);

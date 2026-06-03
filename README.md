@@ -46,13 +46,30 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 
 To skip building tests, configure with `-DVMP_BUILD_TESTS=OFF`.
 
+To build the benchmarks binary, configure with `-DVMP_BUILD_BENCHMARKS=ON`:
+
+```shell
+cmake .. -DVMP_BUILD_BENCHMARKS=ON
+```
+
 Build the project:
 
 ```shell
 cmake --build .
 ```
 
-## Tests
+## Benchmarking
+
+`vmp_benchmarks` runs every solver over each instance in the three suites (`general/`, `tree/`, `cluster-tree/`) and reports time measurements to stdout as CSV: `suite,instance,solver,guests,capacity,hosts,time_ms,valid`.
+Missing suite directories are skipped.
+
+```shell
+./benchmarks/vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
+./benchmarks/vmp_benchmarks /path/to/instances -w4 # 4 threads
+./benchmarks/vmp_benchmarks /path/to/instances -w1 # 1 thread (likely most representative measurements)
+```
+
+## Testing
 
 Tests are built as two binaries:
 

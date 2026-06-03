@@ -40,3 +40,8 @@ if (VMP_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif ()
+
+option(VMP_BUILD_BENCHMARKS "Build vmp benchmarks" OFF)
+if (VMP_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif ()

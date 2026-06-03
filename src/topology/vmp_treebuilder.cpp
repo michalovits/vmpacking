@@ -48,7 +48,8 @@ void TreeBuilder::setLabel(std::string label)
 
 Tree TreeBuilder::build() &&
 {
-    auto instance = std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
+    auto instance =
+        std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
     const auto instanceGuests = instance->guests();
 
     auto &nodes = tree_.nodes_;

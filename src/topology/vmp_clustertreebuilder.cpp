@@ -86,7 +86,8 @@ void ClusterTreeBuilder::setLabel(std::string label)
 
 ClusterTree ClusterTreeBuilder::build() &&
 {
-    auto instance = std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
+    auto instance =
+        std::make_shared<const Instance>(capacity_, std::move(guests_), std::move(label_));
     const auto instanceGuests = instance->guests();
 
     for (size_t i = 0; i < tree_.leaves_.size(); ++i) {
