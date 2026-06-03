@@ -7,6 +7,7 @@
 #include <vmp_tree.h>
 #include <vmp_treeloader.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -18,6 +19,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -35,8 +37,10 @@ struct Config
     unsigned workers;
     bool help;
 
-    size_t perSuiteBatchSize =
-        4;  // limits the number of instances that can be loaded at one per suite
+    // limits the number of instances that can be loaded at once
+    // there is a value maxResidentInstances > workers that parallelises the best
+    // since it limits contention in shared caches yet load balances well
+    size_t maxResidentInstances;
 };
 
 struct Result
@@ -52,12 +56,18 @@ struct Result
     bool valid;
     double timeMs;
 
-    static std::string header()
+    bool operator<(const Result &other) const
+    {
+        return std::tie(suiteLabel, instanceLabel, solverLabel) <
+               std::tie(other.suiteLabel, other.instanceLabel, other.solverLabel);
+    }
+
+    static std::string csvHeader()
     {
         return "suite,instance,solver,guests,capacity,hosts,time_ms,valid";
     }
 
-    [[nodiscard]] std::string asRow() const
+    [[nodiscard]] std::string csvRow() const
     {
         std::ostringstream row;
         row << suiteLabel << ',' << instanceLabel << ',' << solverLabel << ',' << guestCount << ','
@@ -87,15 +97,25 @@ void printUsage(const char *program)
 
 Config parseConfig(int argc, char **argv)
 {
-    Config config;
-    config.workers = std::max(1u, std::thread::hardware_concurrency());
-    config.help = false;
+    Config cfg;
+
+    cfg.workers = std::max(1u, std::thread::hardware_concurrency());
+    cfg.help = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
 
         if (arg == "-h" || arg == "--help") {
-            config.help = true;
+            cfg.help = true;
+            continue;
+        }
+
+        if (arg[0] != '-') {
+            if (cfg.generalDir.empty()) {
+                cfg.generalDir = arg + "/general";
+                cfg.treeDir = arg + "/tree";
+                cfg.clusterTreeDir = arg + "/cluster-tree";
+            }
             continue;
         }
 
@@ -106,65 +126,50 @@ Config parseConfig(int argc, char **argv)
             }
         }
         else if (arg.rfind("-w", 0) == 0) {
-            value = arg.substr(std::string("-w").size());
+            value = arg.substr(2);
         }
         else if (arg.rfind("--workers=", 0) == 0) {
-            value = arg.substr(std::string("--workers=").size());
-        }
-        else if (arg[0] != '-') {
-            if (config.generalDir.empty()) {
-                config.generalDir = arg + "/general";
-            }
-            if (config.treeDir.empty()) {
-                config.treeDir = arg + "/tree";
-            }
-            if (config.clusterTreeDir.empty()) {
-                config.clusterTreeDir = arg + "/cluster-tree";
-            }
-            continue;
-        }
-        else {
-            continue;
+            value = arg.substr(10);
         }
 
-        const int parsed = std::atoi(value.c_str());
-        if (parsed > 0) {
-            config.workers = static_cast<unsigned>(parsed);
+        if (!value.empty()) {
+            const int parsed = std::atoi(value.c_str());
+            if (parsed > 0) {
+                cfg.workers = static_cast<unsigned>(parsed);
+            }
         }
     }
 
-    return config;
+    // TODO could expose this, but haven't really needed to
+    cfg.maxResidentInstances = std::min(32u, cfg.workers * 4);
+
+    return cfg;
 }
 
 template <typename LoaderT, typename InstanceT>
-int runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solvers,
-             const std::string &dir, unsigned workers, size_t perSuiteBatchSize)
+void runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solvers,
+              const std::string &dir, unsigned workers, size_t maxResidentInstances,
+              std::vector<Result> &outResults)
 {
     if (!std::filesystem::is_directory(dir)) {
         std::cerr << "skipping suite '" << suiteLabel << "': directory not found (" << dir << ")\n";
-        return 0;
+        return;
     }
 
-    int invalid = 0;
     LoaderT loader(dir);
 
     while (true) {
-        auto instances = loader.load(perSuiteBatchSize);
+        auto instances = loader.load(maxResidentInstances);
         if (instances.empty()) {
             break;
         }
 
-        const auto results = runTasks(makeTasks(suiteLabel, instances, solvers), workers);
+        auto results = runTasks(makeTasks(suiteLabel, instances, solvers), workers);
 
-        for (const auto &res : results) {
-            if (!res.valid) {
-                ++invalid;
-            }
-            std::cout << res.asRow() << '\n';
+        for (auto &res : results) {
+            outResults.push_back(std::move(res));
         }
     }
-
-    return invalid;
 }
 
 std::vector<Solver<vmp::Instance>> generalSolvers()
@@ -250,7 +255,7 @@ std::vector<Task> makeTasks(const std::string &suiteLabel, const std::vector<Ins
 std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
 {
     const size_t total = tasks.size();
-    std::cerr << "running " << total << " task(s) on " << workers << " thread(s)\n";
+    std::cerr << "solving " << total << " instance(s) on " << workers << " thread(s)\n";
 
     std::vector<Result> results(total);
     std::atomic<size_t> nextIdx = 0;
@@ -265,7 +270,7 @@ std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
             const Result &res = results[i];
 
             std::lock_guard<std::mutex> lock(mutex);
-            std::cerr << "[" << done << "/" << total << "] " << res.asRow() << std::endl;
+            std::cerr << "[" << done << "/" << total << "] " << res.csvRow() << std::endl;
         }
     };
 
@@ -284,7 +289,7 @@ std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
     const auto end = std::chrono::steady_clock::now();
     const double elapsed = std::chrono::duration<double>(end - start).count();
 
-    std::cerr << "done: " << total << " task(s) in " << std::fixed << std::setprecision(3)
+    std::cerr << "done: " << total << " instance(s) in " << std::fixed << std::setprecision(3)
               << elapsed << " s\n";
 
     return results;
@@ -306,19 +311,29 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    std::cout << Result::header() << '\n';
+    std::vector<Result> results;
 
-    int bad = 0;
+    runSuite<vmp::InstanceLoader, vmp::Instance>("general", generalSolvers(), cfg.generalDir,
+                                                 cfg.workers, cfg.maxResidentInstances, results);
 
-    bad += runSuite<vmp::InstanceLoader, vmp::Instance>("general", generalSolvers(), cfg.generalDir,
-                                                        cfg.workers, cfg.perSuiteBatchSize);
+    runSuite<vmp::TreeLoader, vmp::Tree>("tree", treeSolvers(), cfg.treeDir, cfg.workers,
+                                         cfg.maxResidentInstances, results);
 
-    bad += runSuite<vmp::TreeLoader, vmp::Tree>("tree", treeSolvers(), cfg.treeDir, cfg.workers,
-                                                cfg.perSuiteBatchSize);
+    runSuite<vmp::ClusterTreeLoader, vmp::ClusterTree>("cluster-tree", clusterTreeSolvers(),
+                                                       cfg.clusterTreeDir, cfg.workers,
+                                                       cfg.maxResidentInstances, results);
 
-    bad += runSuite<vmp::ClusterTreeLoader, vmp::ClusterTree>("cluster-tree", clusterTreeSolvers(),
-                                                              cfg.clusterTreeDir, cfg.workers,
-                                                              cfg.perSuiteBatchSize);
+    int invalid = 0;
+    std::cout << Result::csvHeader() << '\n';
 
-    return bad;
+    std::sort(results.begin(), results.end());
+
+    for (const auto &res : results) {
+        if (!res.valid) {
+            ++invalid;
+        }
+        std::cout << res.csvRow() << '\n';
+    }
+
+    return invalid;
 }
