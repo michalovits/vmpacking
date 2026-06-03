@@ -7,7 +7,6 @@
 #include <vmp_tree.h>
 #include <vmp_treeloader.h>
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -19,7 +18,6 @@
 #include <sstream>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -36,6 +34,9 @@ struct Config
 
     unsigned workers;
     bool help;
+
+    size_t perSuiteBatchSize =
+        4;  // limits the number of instances that can be loaded at one per suite
 };
 
 struct Result
@@ -50,12 +51,6 @@ struct Result
 
     bool valid;
     double timeMs;
-
-    bool operator<(const Result &other) const
-    {
-        return std::tie(suiteLabel, instanceLabel, solverLabel) <
-               std::tie(other.suiteLabel, other.instanceLabel, other.solverLabel);
-    }
 
     static std::string header()
     {
@@ -141,21 +136,35 @@ Config parseConfig(int argc, char **argv)
     return config;
 }
 
-template <typename LoaderT>
-auto loadSuite(const char *suite, const std::string &dir)
+template <typename LoaderT, typename InstanceT>
+int runSuite(const char *suiteLabel, const std::vector<Solver<InstanceT>> &solvers,
+             const std::string &dir, unsigned workers, size_t perSuiteBatchSize)
 {
-    LoaderT loader(dir);
-    using Instances = decltype(loader.load());
-
     if (!std::filesystem::is_directory(dir)) {
-        std::cerr << "skipping suite '" << suite << "': directory not found (" << dir << ")\n";
-        return Instances{};
+        std::cerr << "skipping suite '" << suiteLabel << "': directory not found (" << dir << ")\n";
+        return 0;
     }
 
-    auto instances = loader.load();
-    std::cerr << "loaded suite '" << suite << "': " << instances.size() << " instance(s)\n";
+    int invalid = 0;
+    LoaderT loader(dir);
 
-    return instances;
+    while (true) {
+        auto instances = loader.load(perSuiteBatchSize);
+        if (instances.empty()) {
+            break;
+        }
+
+        const auto results = runTasks(makeTasks(suiteLabel, instances, solvers), workers);
+
+        for (const auto &res : results) {
+            if (!res.valid) {
+                ++invalid;
+            }
+            std::cout << res.asRow() << '\n';
+        }
+    }
+
+    return invalid;
 }
 
 std::vector<Solver<vmp::Instance>> generalSolvers()
@@ -204,7 +213,7 @@ std::vector<Solver<vmp::ClusterTree>> clusterTreeSolvers()
 template <typename InstanceT>
 Task makeTask(std::string suiteLabel, const InstanceT *instance, Solver<InstanceT> solver)
 {
-    return [suiteLabel = std::move(suiteLabel), instance, solver = std::move(solver)]() {
+    return [instance, suiteLabel = std::move(suiteLabel), solver = std::move(solver)]() {
         Result res = {
             .suiteLabel = suiteLabel,
             .solverLabel = solver.label,
@@ -226,14 +235,16 @@ Task makeTask(std::string suiteLabel, const InstanceT *instance, Solver<Instance
 }
 
 template <typename InstanceT>
-void makeTasks(const std::string &suite, const std::vector<InstanceT> &instances,
-               const std::vector<Solver<InstanceT>> &solvers, std::vector<Task> &tasks)
+std::vector<Task> makeTasks(const std::string &suiteLabel, const std::vector<InstanceT> &instances,
+                            const std::vector<Solver<InstanceT>> &solvers)
 {
+    std::vector<Task> tasks;
     for (const auto &instance : instances) {
         for (const auto &solver : solvers) {
-            tasks.push_back(makeTask(suite, &instance, solver));
+            tasks.push_back(makeTask(suiteLabel, &instance, solver));
         }
     }
+    return tasks;
 }
 
 std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
@@ -279,53 +290,35 @@ std::vector<Result> runTasks(const std::vector<Task> &tasks, unsigned workers)
     return results;
 }
 
-int countInvalid(const std::vector<Result> &results)
-{
-    return std::ranges::count_if(results, [](const Result &res) { return !res.valid; });
-}
-
 }  // namespace
 
 int main(int argc, char **argv)
 {
-    const Config config = parseConfig(argc, argv);
+    const Config cfg = parseConfig(argc, argv);
 
-    if (config.help) {
+    if (cfg.help) {
         printUsage(argv[0]);
         return 0;
     }
 
-    if (config.generalDir.empty() || config.treeDir.empty() || config.clusterTreeDir.empty()) {
+    if (cfg.generalDir.empty() || cfg.treeDir.empty() || cfg.clusterTreeDir.empty()) {
         printUsage(argv[0]);
         return -1;
     }
 
-    // Load instances
-
-    auto generals = loadSuite<vmp::InstanceLoader>("general", config.generalDir);
-    auto trees = loadSuite<vmp::TreeLoader>("tree", config.treeDir);
-    auto clusterTrees = loadSuite<vmp::ClusterTreeLoader>("cluster-tree", config.clusterTreeDir);
-
-    if (generals.empty() && trees.empty() && clusterTrees.empty()) {
-        return -1;
-    }
-
-    // Generate tasks
-
-    std::vector<Task> tasks;
-    makeTasks("general", generals, generalSolvers(), tasks);
-    makeTasks("tree", trees, treeSolvers(), tasks);
-    makeTasks("cluster-tree", clusterTrees, clusterTreeSolvers(), tasks);
-
-    std::vector<Result> results = runTasks(tasks, config.workers);
-
-    // stdout gets CSV output
-    std::sort(results.begin(), results.end());
-
     std::cout << Result::header() << '\n';
-    for (const Result &res : results) {
-        std::cout << res.asRow() << '\n';
-    }
 
-    return countInvalid(results);
+    int bad = 0;
+
+    bad += runSuite<vmp::InstanceLoader, vmp::Instance>("general", generalSolvers(), cfg.generalDir,
+                                                        cfg.workers, cfg.perSuiteBatchSize);
+
+    bad += runSuite<vmp::TreeLoader, vmp::Tree>("tree", treeSolvers(), cfg.treeDir, cfg.workers,
+                                                cfg.perSuiteBatchSize);
+
+    bad += runSuite<vmp::ClusterTreeLoader, vmp::ClusterTree>("cluster-tree", clusterTreeSolvers(),
+                                                              cfg.clusterTreeDir, cfg.workers,
+                                                              cfg.perSuiteBatchSize);
+
+    return bad;
 }
