@@ -88,7 +88,7 @@ void printUsage(const char *program)
               << "  Runs every solver over each instance in the three benchmark\n"
               << "  suites under <instance-dir> and reports timings to stdout as CSV.\n\n"
               << "  -w N, --workers N  number of worker threads (default: logical cores)\n"
-              << "  -b N, --batch N    instances loaded per batch (default: min(32, workers*4)\n";
+              << "  -b N, --batch N    instances loaded per batch (default: min(32, workers*4))\n";
 }
 
 Config parseConfig(int argc, char **argv)
