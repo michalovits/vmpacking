@@ -1,8 +1,10 @@
 # vmpacking (vmp)
 
-Algorithms for the overlap variant of the Bin Packing problem, VM Packing. Built as part of my undergraduate dissertation at St Andrews in Spring 2025.
+Algorithms for the overlap variant of the Bin Packing problem, VM Packing.
+Built as part of my undergraduate dissertation at St Andrews in Spring 2025.
+[Here](instances-explanation.md) is a quick intro to the problem.
 
-Direct approximations ([source code](src/vmp_solvers.h)):
+Direct approximations:
 
 * Next Fit
 * First Fit
@@ -11,7 +13,8 @@ Direct approximations ([source code](src/vmp_solvers.h)):
 * Greedy Placement by Opportunity-Aware Efficiency (specialises [[2]](https://doi.org/10.3390/electronics12204205) to the single-resource fixed-capacity case)
 * Tree Placement (implements [[3]](https://doi.org/10.1145/1989493.1989554))
 
-Approximations are also possible by reducing VM Packing to VM Maximisation and in turn to Single-Host VM Maximisation ([source code](src/vmp_maximisers.h)). The dissertation proves that this reduction chain preserves approximation bounds:
+Approximations are also possible by reducing VM Packing to VM Maximisation and in turn to Single-Host VM Maximisation.
+The dissertation proves that this reduction chain preserves approximation bounds:
 
 * VM Packing to VM Maximisation: If the maximiser is β-approximate (realises at least a β fraction of optimal reward, 0 < β < 1), the VM Packing approximation is within O(-lg |guests| / lg (1-β)) of optimal
 * VM Maximisation to Single-Host VM Maximisation: If the single-host solver is α-approximate, the VM Maximisation approximated to within α/(α+1) - ε for any ε > 0 (uses [[4]](https://dl.acm.org/doi/10.5555/1109557.1109624))
@@ -30,12 +33,27 @@ Treatments (applied before or after solving):
 
 See the [examples](examples) directory.
 
+## Benchmarking
+
+`vmp_benchmarks` runs every solver over each instance in three suite directories (`general`, `tree`, `cluster-tree`) and reports time measurements to stdout as CSV (tuples of `suite, instance, solver, guests, capacity, hosts, time_ms, valid`).
+Missing directories are skipped.
+Input files are simple json, some examples [here](tests/e2e/data).
+
+```shell
+vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
+vmp_benchmarks /path/to/instances -w4 # 4 threads
+vmp_benchmarks /path/to/instances -w1 # 1 thread (likely most representative measurements)
+```
+
+Instances are loaded and solved in batches of `min(32, workers * 4)` that are parallelised within.
+The tradeoff is between effective load balancing and contention for shared caches.
+
+You may want to experiment with this on your system!
+Override with `-b N` / `--batch N`.
+
 ## Building
 
-Requirements:
-
-* CMake 3.14 or newer
-* C++ 20 with `std::ranges`
+Requires C++ 20 and CMake 3.14 or newer.
 
 In the project root, create a build directory:
 
@@ -50,34 +68,17 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
 To skip building tests, configure with `-DVMP_BUILD_TESTS=OFF`.
-
-To build the benchmarks binary, configure with `-DVMP_BUILD_BENCHMARKS=ON`:
+To build the benchmarks binary, configure with `-DVMP_BUILD_BENCHMARKS=ON`. E.g.:
 
 ```shell
 cmake .. -DVMP_BUILD_BENCHMARKS=ON
 ```
 
-Build the project:
+Finally build the project:
 
 ```shell
 cmake --build .
 ```
-
-## Benchmarking
-
-`vmp_benchmarks` runs every solver over each instance in three suite directories (`general`, `tree`, `cluster-tree`) and reports time measurements to stdout as CSV (tuples of `suite, instance, solver, guests, capacity, hosts, time_ms, valid`). Missing directories are skipped.
-
-```shell
-vmp_benchmarks /path/to/instances     # defaults to threads = logical cores
-vmp_benchmarks /path/to/instances -w4 # 4 threads
-vmp_benchmarks /path/to/instances -w1 # 1 thread (likely most representative measurements)
-```
-
-Instances are loaded and solved in batches of `min(32, workers * 4)` that are parallelised within.
-The tradeoff is between effective load balancing and contention for shared caches.
-
-You may want to experiment with this on your system!
-Override with `-b N` / `--batch N`.
 
 ## Testing
 
