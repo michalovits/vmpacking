@@ -68,11 +68,4 @@ if __name__ == "__main__":
         d_dist=lambda: random.choices([1, 5], weights=[0.7, 0.3])[0],
     )
 
-    print(
-        json.dumps(
-            {
-                "guests": [g.pages for g in instance],
-                "capacity": max(len(g.pages) for g in instance),
-            }
-        )
-    )
+    print(json.dumps([{"guests": [g.pages for g in instance]}]))
