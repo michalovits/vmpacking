@@ -23,13 +23,13 @@ class InstanceLoader
     load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
   private:
-    const std::string directory;
+    const std::string directory_;
 
-    const std::string capacityName;
-    const std::string guestsName;
+    const std::string capacityName_;
+    const std::string guestsName_;
 
-    std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, size_t> processedInstances;
+    std::set<std::filesystem::path> paths_;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances_;
 };
 
 }  // namespace vmp

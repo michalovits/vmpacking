@@ -27,18 +27,18 @@ class ClusterTreeLoader
     std::vector<ClusterTree> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
   private:
-    const std::string directory;
+    const std::string directory_;
 
-    const std::string capacityName;
-    const std::string nodesName;
-    const std::string nodeIdName;
-    const std::string nodeParentsName;
-    const std::string pagesName;
-    const std::string guestPagesName;
-    const std::string clusterChildrenName;
+    const std::string capacityName_;
+    const std::string nodesName_;
+    const std::string nodeIdName_;
+    const std::string nodeParentsName_;
+    const std::string pagesName_;
+    const std::string guestPagesName_;
+    const std::string clusterChildrenName_;
 
-    std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, size_t> processedInstances;
+    std::set<std::filesystem::path> paths_;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances_;
 
     [[nodiscard]] std::optional<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 

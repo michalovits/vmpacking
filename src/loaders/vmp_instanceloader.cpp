@@ -1,5 +1,6 @@
 #include <vmp_instanceloader.h>
 
+#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -12,9 +13,9 @@ namespace vmp
 
 InstanceLoader::InstanceLoader(std::string directory, std::string capacityName,
                                std::string guestsName)
-    : directory(std::move(directory)),
-      capacityName(std::move(capacityName)),
-      guestsName(std::move(guestsName))
+    : directory_(std::move(directory)),
+      capacityName_(std::move(capacityName)),
+      guestsName_(std::move(guestsName))
 {
 }
 
@@ -49,15 +50,15 @@ std::vector<Instance> InstanceLoader::load(const size_t maxInstances)
     std::vector<std::vector<std::vector<int>>> guestData;
     std::vector<std::string> labels;
 
-    for (const auto &directoryEntry : fs::directory_iterator(directory)) {
+    for (const auto &directoryEntry : fs::directory_iterator(directory_)) {
         if (directoryEntry.path().extension() == ".json") {
-            paths.emplace(directoryEntry);
+            paths_.emplace(directoryEntry);
         }
     }
 
-    while (!paths.empty()) {
-        const auto path = *paths.begin();
-        paths.erase(path);
+    while (!paths_.empty()) {
+        const auto path = *paths_.begin();
+        paths_.erase(path);
 
         auto file = std::ifstream(path);
 
@@ -65,20 +66,20 @@ std::vector<Instance> InstanceLoader::load(const size_t maxInstances)
             throw std::runtime_error("Failed to open file " + path.string());
         }
 
-        if (!processedInstances.contains(path)) {
-            processedInstances[path] = 0;
+        if (!processedInstances_.contains(path)) {
+            processedInstances_[path] = 0;
         }
 
         const auto rootNodesJson = json::parse(file);
 
-        for (size_t i = processedInstances[path]; i < rootNodesJson.size(); ++i) {
+        for (size_t i = processedInstances_[path]; i < rootNodesJson.size(); ++i) {
             const auto &instanceJson = rootNodesJson[i];
 
-            capacityData.push_back(instanceJson[capacityName].get<int>());
-            guestData.push_back(instanceJson[guestsName].get<std::vector<std::vector<int>>>());
+            capacityData.push_back(instanceJson[capacityName_].get<int>());
+            guestData.push_back(instanceJson[guestsName_].get<std::vector<std::vector<int>>>());
             labels.push_back(path.filename().string() + "#" + std::to_string(i));
 
-            ++processedInstances[path];
+            ++processedInstances_[path];
 
             if (guestData.size() == maxInstances) {
                 return makeInstances(capacityData, guestData, labels);

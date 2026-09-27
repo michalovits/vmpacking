@@ -24,15 +24,15 @@ class TreeLoader
     std::vector<Tree> load(size_t maxInstances = std::numeric_limits<size_t>::max());
 
   private:
-    const std::string directory;
+    const std::string directory_;
 
-    const std::string capacityName;
-    const std::string guestPagesName;
-    const std::string pagesName;
-    const std::string childrenName;
+    const std::string capacityName_;
+    const std::string guestPagesName_;
+    const std::string pagesName_;
+    const std::string childrenName_;
 
-    std::set<std::filesystem::path> paths;
-    std::unordered_map<std::filesystem::path, size_t> processedInstances;
+    std::set<std::filesystem::path> paths_;
+    std::unordered_map<std::filesystem::path, size_t> processedInstances_;
 
     [[nodiscard]] std::optional<Guest> parseGuest(const nlohmann::json &nodeJson) const;
 
